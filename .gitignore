@@ -45,3 +45,13 @@ Thumbs.db
 # Project specific
 *.json
 !package*.json
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.json
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
