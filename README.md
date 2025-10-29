@@ -1,6 +1,32 @@
 # Enhanced Security Alerts Generator
 
-This tool generates realistic, varied security alerts for testing Kibana Security Solution with support for correlated attack campaigns, flexible time distribution, and custom scenario configuration.
+A Pythonic, modular tool for generating realistic, varied security alerts for testing Kibana Security Solution with support for correlated attack campaigns, flexible time distribution, and custom scenario configuration.
+
+## Installation
+
+### From Source
+
+```bash
+git clone https://github.com/enriquesanchez-elastic/alert-generator
+cd alert-generator
+pip install -e .
+```
+
+### Development Installation
+
+```bash
+pip install -e ".[dev]"
+```
+
+## Quick Start
+
+```bash
+# Basic usage (using the package)
+python -m alerts_generator --count 20
+
+# Or install and use as a command
+alerts-generator --count 20
+```
 
 ## Features
 
@@ -11,7 +37,7 @@ Load custom attack scenarios from YAML files without modifying code.
 **Usage:**
 
 ```bash
-python generate_multiple_alerts_cloud.py --count 20 --scenarios-file custom_scenarios.yaml
+python -m alerts_generator --count 20 --scenarios-file custom_scenarios.yaml
 ```
 
 **Configuration Files:**
@@ -55,13 +81,13 @@ Generate multi-host attacks that appear to come from the same threat actor.
 
 ```bash
 # Generate a 50-alert campaign across 10 hosts
-python generate_multiple_alerts_cloud.py --count 50 --campaign --campaign-hosts 10
+python -m alerts_generator --count 50 --campaign --campaign-hosts 10
 
 # Slow-moving APT campaign
-python generate_multiple_alerts_cloud.py --count 100 --campaign --campaign-hosts 15 --attack-speed slow
+python -m alerts_generator --count 100 --campaign --campaign-hosts 15 --attack-speed slow
 
 # Fast attack (minutes to hours)
-python generate_multiple_alerts_cloud.py --count 30 --campaign --attack-speed fast
+python -m alerts_generator --count 30 --campaign --attack-speed fast
 ```
 
 **Attack Phases:**
@@ -137,7 +163,7 @@ Spread alerts realistically over time instead of generating all at once.
 Weight alerts toward business hours (8am-6pm) and weekdays:
 
 ```bash
-python generate_multiple_alerts_cloud.py --count 100 --time-spread days --working-hours
+python -m alerts_generator --count 100 --time-spread days --working-hours
 ```
 
 This filters out:
@@ -149,10 +175,10 @@ This filters out:
 
 ```bash
 # Simulate a week of security events during business hours
-python generate_multiple_alerts_cloud.py --count 200 --time-spread days --working-hours
+python -m alerts_generator --count 200 --time-spread days --working-hours
 
 # Month-long campaign
-python generate_multiple_alerts_cloud.py --count 500 --time-spread weeks
+python -m alerts_generator --count 500 --time-spread weeks
 ```
 
 ## Complete Examples
@@ -161,31 +187,31 @@ python generate_multiple_alerts_cloud.py --count 500 --time-spread weeks
 
 ```bash
 # Generate 20 varied alerts
-python generate_multiple_alerts_cloud.py --count 20
+python -m alerts_generator --count 20
 
 # Dry run (no indexing)
-python generate_multiple_alerts_cloud.py --count 10 --dry-run
+python -m alerts_generator --count 10 --dry-run
 
 # Save to JSON file
-python generate_multiple_alerts_cloud.py --count 50 --output alerts.json
+python -m alerts_generator --count 50 --output alerts.json
 
 # Delete all logs and alerts from Elasticsearch
-python generate_multiple_alerts_cloud.py --delete-all
+python -m alerts_generator --delete-all
 ```
 
 ### Campaign Scenarios
 
 ```bash
 # Ransomware outbreak across organization
-python generate_multiple_alerts_cloud.py --count 100 --campaign --campaign-hosts 20 \
+python -m alerts_generator --count 100 --campaign --campaign-hosts 20 \
   --attack-speed fast --index-all
 
 # Slow APT campaign over weeks
-python generate_multiple_alerts_cloud.py --count 200 --campaign --campaign-hosts 10 \
+python -m alerts_generator --count 200 --campaign --campaign-hosts 10 \
   --attack-speed slow --time-spread weeks --working-hours
 
 # Crypto mining infection
-python generate_multiple_alerts_cloud.py --count 50 --campaign --campaign-hosts 30 \
+python -m alerts_generator --count 50 --campaign --campaign-hosts 30 \
   --attack-speed medium --time-spread days
 ```
 
@@ -193,10 +219,10 @@ python generate_multiple_alerts_cloud.py --count 50 --campaign --campaign-hosts 
 
 ```bash
 # Use custom attack scenarios
-python generate_multiple_alerts_cloud.py --count 25 --scenarios-file my_scenarios.yaml
+python -m alerts_generator --count 25 --scenarios-file my_scenarios.yaml
 
 # Custom scenarios with campaign
-python generate_multiple_alerts_cloud.py --count 100 --scenarios-file apt_scenarios.yaml \
+python -m alerts_generator --count 100 --scenarios-file apt_scenarios.yaml \
   --campaign --campaign-hosts 15 --attack-speed slow
 ```
 
@@ -204,13 +230,13 @@ python generate_multiple_alerts_cloud.py --count 100 --scenarios-file apt_scenar
 
 ```bash
 # Quick test with 5 alerts
-python generate_multiple_alerts_cloud.py --count 5 --dry-run
+python -m alerts_generator --count 5 --dry-run
 
 # Generate large dataset for performance testing
-python generate_multiple_alerts_cloud.py --count 1000 --time-spread weeks --output large_dataset.json
+python -m alerts_generator --count 1000 --time-spread weeks --output large_dataset.json
 
 # Realistic production simulation
-python generate_multiple_alerts_cloud.py --count 500 --time-spread days --working-hours \
+python -m alerts_generator --count 500 --time-spread days --working-hours \
   --campaign --campaign-hosts 50 --attack-speed medium --index-all
 ```
 
@@ -303,7 +329,7 @@ Without PyYAML, the script uses hardcoded scenarios only.
 **Delete All Data:**
 
 ```bash
-python generate_multiple_alerts_cloud.py --delete-all
+python -m alerts_generator --delete-all
 ```
 
 This command deletes all documents from:
@@ -361,7 +387,26 @@ Solution: Check ELASTIC_URL, USERNAME, PASSWORD in script
 ## Architecture
 
 ```
-Campaign
+alerts_generator/
+├── config/              # Configuration management (Pydantic)
+├── models/              # Data models (Campaign, Scenario, Alert)
+├── generators/          # Alert and event generators
+│   ├── alert.py         # Detection rule alert generator
+│   ├── process.py       # Process event generator
+│   ├── campaign.py      # Campaign generator
+│   └── randomizers.py   # Random data utilities
+├── indexers/            # Storage backends
+│   └── elasticsearch.py # Elasticsearch implementation
+├── time_distribution/   # Time distribution strategies
+├── utils/               # Utilities (logging)
+├── core.py              # Main orchestration
+└── cli.py               # Command-line interface
+```
+
+### Data Flow
+
+```
+Campaign Generator
   ├─ Shared Infrastructure
   │   ├─ Attacker IP
   │   ├─ C2 Domain/IP
@@ -373,7 +418,7 @@ Campaign
       ├─ Lateral Movement (40%)
       └─ Exfiltration (20%)
 
-Each Alert
+Alert Generator
   ├─ Detection Rule Alert (.alerts-security.alerts-default)
   ├─ Process Events (2-5) (logs-endpoint.events.process-default)
   │   └─ Process Hierarchy with Entity IDs
@@ -382,7 +427,10 @@ Each Alert
 
 ## Related Files
 
-- `generate_multiple_alerts_cloud.py` - Main script
-- `full_alert_example_cloud.py` - Single alert generator (original)
+- `alerts_generator/` - Main package directory
 - `alert_scenarios.yaml` - Default scenarios configuration
 - `example_custom_scenarios.yaml` - Custom scenario examples
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to this project.
