@@ -1,0 +1,151 @@
+# Example Custom Security Alert Scenarios
+# Copy this file and modify to create your own attack scenarios
+
+scenarios:
+  # Example 1: Simple 2-process attack
+  - name: "Custom Malware Dropper"
+    description: "Simple malware dropper via email attachment"
+    severity: "medium"
+    processes:
+      - name: "outlook.exe"
+        executable: "C:\\Program Files\\Microsoft Office\\Outlook.exe"
+        args:
+          - "outlook.exe"
+        working_dir: "C:\\Users\\user\\Documents"
+        user: "user"
+      - name: "dropper.exe"
+        executable: "C:\\Users\\user\\AppData\\Local\\Temp\\dropper.exe"
+        args:
+          - "dropper.exe"
+          - "--install"
+        working_dir: "C:\\Users\\user\\AppData\\Local\\Temp"
+        user: "user"
+    malware_file:
+      name: "dropper.exe"
+      path: "C:\\Users\\user\\AppData\\Local\\Temp\\dropper.exe"
+      extension: ".exe"
+
+  # Example 2: Complex 5-process attack chain
+  - name: "Advanced Persistent Threat"
+    description: "Multi-stage APT attack with persistence"
+    severity: "critical"
+    processes:
+      - name: "init"
+        executable: "/sbin/init"
+        args:
+          - "/sbin/init"
+        working_dir: "/"
+        user: "root"
+      - name: "systemd"
+        executable: "/usr/lib/systemd/systemd"
+        args:
+          - "/usr/lib/systemd/systemd"
+          - "--system"
+        working_dir: "/"
+        user: "root"
+      - name: "malicious-service"
+        executable: "/usr/local/bin/malicious-service"
+        args:
+          - "/usr/local/bin/malicious-service"
+          - "--daemon"
+        working_dir: "/usr/local/bin"
+        user: "root"
+      - name: "persistence-installer"
+        executable: "/tmp/persistence-installer"
+        args:
+          - "/tmp/persistence-installer"
+          - "--cron"
+          - "--startup"
+        working_dir: "/tmp"
+        user: "root"
+      - name: "payload"
+        executable: "/var/tmp/.hidden/payload"
+        args:
+          - "/var/tmp/.hidden/payload"
+          - "--connect"
+          - "c2-server.evil.com"
+        working_dir: "/var/tmp/.hidden"
+        user: "root"
+    malware_file:
+      name: "payload"
+      path: "/var/tmp/.hidden/payload"
+      extension: ""
+
+  # Example 3: Container escape attack
+  - name: "Container Escape"
+    description: "Attack escaping from Docker container"
+    severity: "high"
+    processes:
+      - name: "dockerd"
+        executable: "/usr/bin/dockerd"
+        args:
+          - "dockerd"
+        working_dir: "/var/lib/docker"
+        user: "root"
+      - name: "containerd"
+        executable: "/usr/bin/containerd"
+        args:
+          - "containerd"
+        working_dir: "/"
+        user: "root"
+      - name: "runc"
+        executable: "/usr/bin/runc"
+        args:
+          - "runc"
+          - "create"
+          - "malicious-container"
+        working_dir: "/var/run/docker"
+        user: "root"
+      - name: "escape-exploit"
+        executable: "/tmp/escape-exploit"
+        args:
+          - "/tmp/escape-exploit"
+          - "--target"
+          - "host"
+        working_dir: "/tmp"
+        user: "root"
+    malware_file:
+      name: "escape-exploit"
+      path: "/tmp/escape-exploit"
+      extension: ""
+
+  # Example 4: Supply chain attack
+  - name: "Supply Chain Compromise"
+    description: "Malicious package in software supply chain"
+    severity: "critical"
+    processes:
+      - name: "npm"
+        executable: "/usr/bin/npm"
+        args:
+          - "npm"
+          - "install"
+          - "malicious-package"
+        working_dir: "/home/developer/project"
+        user: "developer"
+      - name: "node"
+        executable: "/usr/bin/node"
+        args:
+          - "node"
+          - "node_modules/malicious-package/postinstall.js"
+        working_dir: "/home/developer/project"
+        user: "developer"
+      - name: "payload-downloader"
+        executable: "/tmp/payload-downloader.sh"
+        args:
+          - "/tmp/payload-downloader.sh"
+        working_dir: "/tmp"
+        user: "developer"
+    malware_file:
+      name: "payload-downloader.sh"
+      path: "/tmp/payload-downloader.sh"
+      extension: ".sh"
+
+# Notes on creating custom scenarios:
+#
+# - Each scenario must have: name, description, severity, processes, malware_file
+# - severity values: "low", "medium", "high", "critical"
+# - processes is a list from root to leaf (parent to child chain)
+# - Each process needs: name, executable, args, working_dir, user
+# - malware_file needs: name, path, extension
+# - Use realistic paths and command-line arguments
+# - The last process in the chain is treated as the malicious one
