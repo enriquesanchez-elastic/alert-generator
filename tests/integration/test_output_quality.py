@@ -3,7 +3,7 @@
 import re
 from datetime import datetime
 
-from alerts_generator.core import AlertOrchestrator
+from secgen.core import AlertOrchestrator
 
 
 def validate_ecs_fields(alert_dict):

@@ -2,7 +2,7 @@
 
 import pytest
 
-from alerts_generator.models.scenario import MalwareFile, ProcessInfo, Scenario
+from secgen.models.scenario import MalwareFile, ProcessInfo, Scenario
 
 
 def test_scenario_creation_succeeds(sample_scenario):

@@ -1,6 +1,6 @@
 """Tests for CampaignGenerator."""
 
-from alerts_generator.generators.campaign import CampaignGenerator
+from secgen.generators.campaign import CampaignGenerator
 
 
 def test_generate_creates_campaign_with_valid_attributes():

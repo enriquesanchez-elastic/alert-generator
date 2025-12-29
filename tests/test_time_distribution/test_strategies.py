@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 
-from alerts_generator.time_distribution.strategies import (
+from secgen.time_distribution.strategies import (
     BusinessHoursStrategy,
     DaysStrategy,
     HoursStrategy,

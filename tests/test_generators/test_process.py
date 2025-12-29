@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from alerts_generator.generators.process import ProcessEventGenerator
+from secgen.generators.process import ProcessEventGenerator
 
 
 def test_generate_returns_list_with_correct_number_of_events(sample_scenario):
@@ -58,7 +58,7 @@ def test_ancestry_array_built_correctly(sample_scenario):
     generator = ProcessEventGenerator()
 
     # Create a scenario with at least 3 processes for this test
-    from alerts_generator.models.scenario import MalwareFile, ProcessInfo, Scenario
+    from secgen.models.scenario import MalwareFile, ProcessInfo, Scenario
 
     multi_process_scenario = Scenario(
         name="Multi Process Test",

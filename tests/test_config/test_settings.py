@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from alerts_generator.config.settings import Settings
+from secgen.config.settings import Settings
 
 
 def test_settings_default_values():
@@ -22,7 +22,7 @@ def test_settings_default_values():
             os.environ.pop(var, None)
 
         # Force reload of settings
-        import alerts_generator.config.settings as settings_module
+        import secgen.config.settings as settings_module
 
         settings_module._settings = None
 
@@ -49,7 +49,7 @@ def test_settings_default_values():
             else:
                 os.environ.pop(var, None)
         # Reset settings singleton
-        import alerts_generator.config.settings as settings_module
+        import secgen.config.settings as settings_module
 
         settings_module._settings = None
 

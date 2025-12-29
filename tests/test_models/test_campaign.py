@@ -2,7 +2,7 @@
 
 import pytest
 
-from alerts_generator.models.campaign import Campaign
+from secgen.models.campaign import Campaign
 
 
 def test_campaign_creation_succeeds(sample_campaign):

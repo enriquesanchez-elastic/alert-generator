@@ -1,436 +1,768 @@
-# Enhanced Security Alerts Generator
+# Security Data Generator for Elastic
 
-A Pythonic, modular tool for generating realistic, varied security alerts for testing Kibana Security Solution with support for correlated attack campaigns, flexible time distribution, and custom scenario configuration.
+A comprehensive, modular tool for generating realistic, ECS-compliant security data for testing Elastic Security Solution. Supports correlated attack campaigns, multi-event-type generation, World state management for entity correlation, and extensive coverage of security data sources.
+
+## Features
+
+- **Multi-Event-Type Generation**: Process, file, registry, network, DNS, authentication, cloud, and threat intelligence events
+- **World State Management**: Persistent entity correlation across all event types (host.id, user.name, process.entity_id)
+- **Attack Campaigns**: Correlated multi-phase attacks with shared threat actor infrastructure
+- **Cloud Security**: AWS CloudTrail, Azure AD, and GCP audit log generation
+- **Network Security**: DNS, HTTP, TLS with JA3 fingerprints, and geo-enriched network flows
+- **Threat Intelligence**: Coordinated IOC generation for indicator matching rules
+- **ECS Compliance**: Full Elastic Common Schema compliance for all event types
 
 ## Installation
 
-### From Source
+### Using uv (Recommended)
+
+[uv](https://docs.astral.sh/uv/) is a fast Python package installer and resolver.
 
 ```bash
-git clone https://github.com/enriquesanchez-elastic/alert-generator
-cd alert-generator
+# Install uv if you don't have it
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and install
+git clone https://github.com/enriquesanchez-elastic/secgen
+cd secgen
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+uv pip install -e .
+```
+
+### Development Installation with uv
+
+```bash
+uv pip install -e ".[dev]"
+```
+
+### Using pip
+
+```bash
+git clone https://github.com/enriquesanchez-elastic/secgen
+cd secgen
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
-### Development Installation
+### Development Installation with pip
 
 ```bash
 pip install -e ".[dev]"
 ```
 
+### Dependencies
+
+The project requires Python 3.10+ and these packages (installed automatically):
+- `requests` - HTTP client for Elasticsearch
+- `pydantic` / `pydantic-settings` - Configuration management
+- `pyyaml` - YAML scenario file support
+- `python-dotenv` - Environment variable support
+
 ## Quick Start
 
-```bash
-# Basic usage (using the package)
-python -m alerts_generator --count 20
-
-# Or install and use as a command
-alerts-generator --count 20
-```
-
-## Features
-
-### 1. Configuration File Support
-
-Load custom attack scenarios from YAML files without modifying code.
-
-**Usage:**
+### Discovery Commands
 
 ```bash
-python -m alerts_generator --count 20 --scenarios-file custom_scenarios.yaml
+# List all available event types
+python -m secgen list event-types
+
+# List attack patterns with MITRE ATT&CK TTP filtering
+python -m secgen list attack-patterns --ttp T1110
+
+# Describe an event type in detail
+python -m secgen describe event-type dns
+
+# Describe an attack pattern
+python -m secgen describe attack brute-force
 ```
 
-**Configuration Files:**
+### Generate Events by Type
 
-- `alert_scenarios.yaml` - Default scenarios (7 attack types)
-- `example_custom_scenarios.yaml` - Template for creating custom scenarios
+```bash
+# Generate DNS events
+python -m secgen generate dns --count 50
 
-**Scenario Structure:**
+# Generate with malicious parameter and index to Elasticsearch
+python -m secgen generate dns --count 50 --param is_malicious=true --index
+
+# Generate vulnerability scan findings
+python -m secgen generate vulnerability --count 100 --param severity=critical
+
+# Generate risk scores for Entity Analytics
+python -m secgen generate risk-score --use-world --count 30 --index
+```
+
+### Execute Attack Patterns
+
+```bash
+# Execute brute-force attack pattern
+python -m secgen attack brute-force --count 3 --index
+
+# Execute C2 beaconing
+python -m secgen attack c2-beacon --world-file qa-world.json --index
+
+# Execute DGA activity
+python -m secgen attack dga-activity --index
+```
+
+### Feature Testing
+
+```bash
+# Test Network Map visualization
+python -m secgen test network-map --index
+
+# Test Timeline correlation
+python -m secgen test timeline --index
+
+# Test Entity Analytics
+python -m secgen test entity-analytics --index
+```
+
+### Presets (One-Command Workflows)
+
+```bash
+# Demo cluster with diverse data
+python -m secgen preset demo-cluster
+
+# Entity Analytics showcase
+python -m secgen preset entity-analytics-showcase
+
+# Attack simulation for detection testing
+python -m secgen preset attack-simulation
+```
+
+### Legacy Mode (Backward Compatible)
+
+```bash
+# Legacy mode - generate 20 alerts
+python -m secgen --count 20
+
+# Generate with entity correlation (World state)
+python -m secgen --count 20 --use-world
+
+# Create and manage World state
+python -m secgen world create --hosts 50 --users 100 --save world.json
+
+# Generate with persistent World state
+python -m secgen generate --count 30 --world-file world.json --campaign
+
+# Generate sample multi-event scenario
+python -m secgen sample-scenario --output my_scenario.yaml
+
+# Performance testing
+python -m secgen perf-test --events 10000 --types file network dns
+```
+
+## CLI Commands
+
+### Legacy Mode (Backward Compatible)
+
+```bash
+# Basic alert generation
+python -m secgen --count 20
+
+# Campaign mode with entity correlation
+python -m secgen --count 50 --campaign --campaign-hosts 10 --use-world
+
+# Time distribution with business hours
+python -m secgen --count 100 --time-spread days --working-hours
+
+# Delete all generated data
+python -m secgen --delete-all
+```
+
+### World Command
+
+Manage persistent World state for entity correlation.
+
+```bash
+# Create a new World with hosts and users
+python -m secgen world create --hosts 50 --users 100 --save world.json
+
+# Load and display World information
+python -m secgen world info --load world.json
+
+# Load existing World
+python -m secgen world load --load world.json
+```
+
+**World State includes:**
+- Hosts with persistent host.id, IPs, MACs, OS info
+- Users with roles, groups, and host assignments
+- Process trees for each host
+- Network topology (subnets, DNS servers, domain controllers)
+- Threat actors for campaign generation
+
+### Generate Command (Advanced)
+
+Advanced generation with World state correlation.
+
+```bash
+# Generate with ephemeral World state
+python -m secgen generate --count 30 --use-world
+
+# Generate with persistent World state
+python -m secgen generate --count 50 --world-file world.json --campaign
+
+# Save World state after generation
+python -m secgen generate --count 30 --use-world --save-world world_after.json
+
+# Full options
+python -m secgen generate \
+  --count 100 \
+  --scenario custom_scenarios.yaml \
+  --world-file world.json \
+  --campaign \
+  --hosts 20 \
+  --speed slow \
+  --time-spread days \
+  --working-hours \
+  --output events.json
+```
+
+### Performance Test Command
+
+Benchmark event generation performance.
+
+```bash
+# Test all generator types
+python -m secgen perf-test --events 10000
+
+# Test specific event types
+python -m secgen perf-test --events 5000 --types file network dns auth
+
+# Dry run (don't index)
+python -m secgen perf-test --events 10000 --dry-run
+```
+
+### Sample Scenario Command
+
+Generate sample multi-event scenario YAML.
+
+```bash
+# Print to stdout
+python -m secgen sample-scenario
+
+# Save to file
+python -m secgen sample-scenario --output apt_scenario.yaml
+```
+
+## Event Types & Generators
+
+### Endpoint Events
+
+| Generator | Index Pattern | Use Cases |
+|-----------|--------------|-----------|
+| Process | `logs-endpoint.events.process-*` | Process execution, command lines, process trees |
+| File | `logs-endpoint.events.file-*` | File creation, modification, deletion, malware drops |
+| Registry | `logs-endpoint.events.registry-*` | Windows persistence, security disabling |
+| Network | `logs-endpoint.events.network-*` | Process-linked network connections, C2 beaconing |
+
+### Network Events
+
+| Generator | Index Pattern | Use Cases |
+|-----------|--------------|-----------|
+| DNS | `logs-dns.query-*` | DNS queries, DGA detection, DNS tunneling |
+| Network Flow | `logs-network_traffic.flow-*` | Geo-enriched flows, Network Map visualization |
+| HTTP | `logs-network_traffic.http-*` | Web traffic, web shells, HTTP exfiltration |
+| TLS | `logs-network_traffic.tls-*` | JA3/JA3S fingerprints, certificate analysis |
+
+### Identity Events
+
+| Generator | Index Pattern | Use Cases |
+|-----------|--------------|-----------|
+| Authentication | `logs-system.auth-*` | Login success/failure, brute force, impossible travel |
+| IAM | `logs-system.security-*` | User/group/role management, privilege escalation |
+
+### Cloud Events
+
+| Generator | Index Pattern | Use Cases |
+|-----------|--------------|-----------|
+| AWS CloudTrail | `logs-aws.cloudtrail-*` | IAM changes, S3 access, defense evasion |
+| Azure Sign-in | `logs-azure.signinlogs-*` | Azure AD authentication, risky sign-ins |
+| Azure Audit | `logs-azure.auditlogs-*` | Directory changes, role assignments |
+| GCP Audit | `logs-gcp.audit-*` | GCP API calls, service account abuse |
+
+### Threat Intelligence
+
+| Generator | Index Pattern | Use Cases |
+|-----------|--------------|-----------|
+| Threat Indicators | `logs-ti_util.logs-*` | IOC matching, coordinated indicator injection |
+
+## Multi-Event Scenario Format
+
+Create complex attack scenarios with multiple event types:
 
 ```yaml
 scenarios:
-  - name: "Attack Name"
-    description: "What the attack does"
-    severity: "high"  # low, medium, high, critical
-    processes:
-      - name: "process1"
-        executable: "/path/to/binary"
-        args: ["arg1", "arg2"]
-        working_dir: "/working/directory"
-        user: "username"
-      # ... more processes (2-5 recommended)
-    malware_file:
-      name: "filename"
-      path: "/full/path"
-      extension: ".ext"
+  - name: "APT29 Initial Access Campaign"
+    description: "Spear-phishing leading to payload execution and C2 establishment"
+    severity: "critical"
+    threat_actor: "APT29"
+    ttps:
+      - "T1566.001"  # Spear-phishing Attachment
+      - "T1059.001"  # PowerShell
+      - "T1071.001"  # Web Protocols
+
+    environment:
+      os_family: "windows"
+      host_template: "workstation"
+      user_template: "standard"
+
+    phases:
+      - name: "initial_access"
+        description: "User opens malicious document"
+        duration_minutes: 2
+        correlation:
+          same_host: true
+          same_user: true
+          process_tree: true
+        events:
+          - type: "authentication"
+            template: "successful_login"
+          - type: "process"
+            params:
+              name: "OUTLOOK.EXE"
+              executable: "C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE"
+              args: ["/recycle"]
+              working_dir: "C:\\Users\\victim\\Documents"
+              user: "victim"
+          - type: "file"
+            template: "malware_drop"
+
+      - name: "execution"
+        description: "Malicious macro executes PowerShell"
+        events:
+          - type: "process"
+            template: "powershell_encoded"
+          - type: "file"
+            template: "malware_drop"
+
+      - name: "persistence"
+        description: "Establish registry persistence"
+        events:
+          - type: "registry"
+            template: "run_key_persistence"
+
+      - name: "c2_communication"
+        description: "Establish C2 channel"
+        events:
+          - type: "dns"
+            params:
+              query_name: "cozy-c2.evil.com"
+              is_malicious: true
+          - type: "network"
+            template: "c2_beacon"
+          - type: "tls"
+            params:
+              server_name: "cozy-c2.evil.com"
+              is_malicious: true
+
+    generate_indicators: true
 ```
 
-### 2. Correlated Attack Campaigns
+### Available Event Templates
 
-Generate multi-host attacks that appear to come from the same threat actor.
+```yaml
+# Process templates
+- bash_session
+- powershell_encoded
 
-**Features:**
+# File templates  
+- malware_drop
+- data_staging
 
-- Shared attacker IP address
-- Common C2 (Command & Control) infrastructure
-- Related file hashes (same malware family)
-- Progressive attack phases
-- Multiple targeted hosts
+# Network templates
+- c2_beacon
+- data_exfiltration
 
-**Usage:**
+# Authentication templates
+- successful_login
+- failed_login
+- brute_force
 
-```bash
-# Generate a 50-alert campaign across 10 hosts
-python -m alerts_generator --count 50 --campaign --campaign-hosts 10
+# Registry templates (Windows)
+- run_key_persistence
 
-# Slow-moving APT campaign
-python -m alerts_generator --count 100 --campaign --campaign-hosts 15 --attack-speed slow
-
-# Fast attack (minutes to hours)
-python -m alerts_generator --count 30 --campaign --attack-speed fast
+# DNS templates
+- dga_activity
+- dns_tunneling
 ```
 
-**Attack Phases:**
-Campaigns follow a realistic attack progression:
+## Entity Correlation with World State
 
-1. **Initial Access** (10% of alerts)
-   - Web shell deployment
-   - Backdoor installation
+The World state enables proper correlation across all event types using consistent entity identifiers:
 
-2. **Execution** (30% of alerts)
-   - Crypto miners
-   - Ransomware
-   - Privilege escalation
+### Correlation Keys
 
-3. **Lateral Movement** (40% of alerts)
-   - Credential theft
-   - Remote execution
-   - Additional privilege escalation
+| Key | Description | Use Case |
+|-----|-------------|----------|
+| `host.id` | Persistent host identifier | Timeline, Analyzer, Entity Analytics |
+| `user.name` | Username | Entity Analytics risk scoring |
+| `process.entity_id` | Process identifier | Process tree visualization |
+| `network.community_id` | Network flow ID | Cross-tool correlation |
 
-4. **Exfiltration** (20% of alerts)
-   - Data theft
-   - Ransomware encryption
+### Example: Correlated Attack Chain
 
-**Attack Speed Options:**
+```python
+from secgen.core.world import World
+from secgen.generators.endpoint import FileEventGenerator, EndpointNetworkEventGenerator
+from secgen.generators.network import DNSEventGenerator
 
-- `fast`: Minutes to hours (initial: 50-60 min ago, exfil: 0-10 min ago)
-- `medium`: Hours to half-day (initial: 8-12 hours ago, exfil: 0-1 hour ago) [default]
-- `slow`: Days to weeks (initial: 7-14 days ago, exfil: 0-1 day ago)
+# Create world with entities
+world = World()
+world.populate(num_hosts=10, num_users=20)
 
-**Campaign Output Example:**
+# Get correlated entities
+host = world.get_random_host()
+user = world.get_random_user()
+world.assign_user_to_host(user, host)
 
-```
-Campaign ID: abc12345
-Attacker IP: 203.0.113.42
-C2 Server: evil-c2.badactor.com (198.51.100.15)
-Malware Family: RedTeam-Ransomware
-Affected Hosts: 5
-  - web-server-01
-  - db-prod-03
-  - app-server-12
-  - workstation-45
-  - file-server-07
-Time Span: 6.5 hours
+# Spawn process in world
+process = world.spawn_process(
+    host_id=host.id,
+    name="powershell.exe",
+    executable="C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+    args=["-enc", "..."],
+    working_directory="C:\\Users\\victim",
+    user=user,
+)
 
-Phase Distribution:
-  initial         [████████          ] 5 alerts
-  execution       [██████████████████] 15 alerts
-  lateral         [████████████      ] 12 alerts
-  exfiltration    [██████            ] 8 alerts
-```
+# Generate correlated events - all share same host.id, user.name
+file_gen = FileEventGenerator()
+file_event = file_gen.generate_malware_drop(host, user, process, "payload.exe")
 
-### 3. Time Distribution
+dns_gen = DNSEventGenerator()
+dns_event = dns_gen.generate(host=host, query_name="evil-c2.com", is_malicious=True)
 
-Spread alerts realistically over time instead of generating all at once.
+network_gen = EndpointNetworkEventGenerator()
+network_event = network_gen.generate_c2_beacon(host, user, process, "evil-c2.com", "198.51.100.10")
 
-**Time Spread Options:**
-
-```bash
-# Last hour (default)
---time-spread minutes
-
-# Last 24 hours
---time-spread hours
-
-# Last 7 days
---time-spread days
-
-# Last 30 days
---time-spread weeks
+# All events have same host.id enabling Timeline correlation
+assert file_event["host"]["id"] == dns_event["host"]["id"] == network_event["host"]["id"]
 ```
 
-**Business Hours Weighting:**
-Weight alerts toward business hours (8am-6pm) and weekdays:
+## Attack Patterns
 
-```bash
-python -m alerts_generator --count 100 --time-spread days --working-hours
+### Brute Force Attack
+
+```python
+from secgen.generators.identity import AuthenticationEventGenerator
+
+auth_gen = AuthenticationEventGenerator()
+events = auth_gen.generate_brute_force(
+    target_user=user,
+    host=host,
+    source_ip="203.0.113.50",
+    attempts=50,
+    success_at_end=True,
+    duration_minutes=10,
+)
 ```
 
-This filters out:
+### Impossible Travel
 
-- Weekend activity (moves to Friday)
-- After-hours activity (moves to 8am-6pm)
+```python
+events = auth_gen.generate_impossible_travel(
+    user=user,
+    first_location={"country_name": "United States", ...},
+    second_location={"country_name": "Russia", ...},
+    time_gap_minutes=30,
+)
+```
 
-**Examples:**
+### DGA Activity
 
-```bash
-# Simulate a week of security events during business hours
-python -m alerts_generator --count 200 --time-spread days --working-hours
+```python
+from secgen.generators.network import DNSEventGenerator
 
-# Month-long campaign
-python -m alerts_generator --count 500 --time-spread weeks
+dns_gen = DNSEventGenerator()
+events = dns_gen.generate_dga_activity(
+    host=host,
+    domain_count=50,
+    nxdomain_ratio=0.9,
+)
+```
+
+### DNS Tunneling
+
+```python
+events = dns_gen.generate_dns_tunneling(
+    host=host,
+    tunnel_domain="exfil.evil.com",
+    query_count=20,
+    data_size_bytes=10000,
+)
+```
+
+### C2 Beaconing
+
+```python
+from secgen.generators.endpoint import EndpointNetworkEventGenerator
+
+network_gen = EndpointNetworkEventGenerator()
+events = network_gen.generate_c2_beacon(
+    host=host,
+    user=user,
+    process=process,
+    c2_domain="beacon.evil.com",
+    c2_ip="198.51.100.10",
+    beacon_count=10,
+    interval_seconds=60,
+)
+```
+
+### Data Exfiltration
+
+```python
+events = network_gen.generate_data_exfiltration(
+    host=host,
+    user=user,
+    process=process,
+    exfil_domain="exfil.evil.com",
+    exfil_ip="198.51.100.20",
+    data_size_mb=100.0,
+)
+```
+
+### AWS Privilege Escalation
+
+```python
+from secgen.generators.cloud import AWSCloudTrailGenerator
+
+aws_gen = AWSCloudTrailGenerator()
+events = aws_gen.generate_privilege_escalation(
+    attacker=user,
+    account_id="123456789012",
+    source_ip="203.0.113.50",
+)
+```
+
+### Coordinated Threat Indicators
+
+```python
+from secgen.generators.threat_intel import ThreatIndicatorGenerator
+
+threat_gen = ThreatIndicatorGenerator()
+indicators = threat_gen.generate_coordinated_iocs(
+    c2_domain="evil-c2.com",
+    c2_ip="198.51.100.10",
+    malware_hashes=["abc123...", "def456..."],
+    threat_actor="APT29",
+    campaign_name="Operation Dark Eagle",
+)
 ```
 
 ## Complete Examples
 
-### Basic Usage
+### Generate Full Attack Campaign with All Event Types
 
 ```bash
-# Generate 20 varied alerts
-python -m alerts_generator --count 20
+# Create persistent World state
+python -m secgen world create --hosts 50 --users 100 --save campaign_world.json
 
-# Dry run (no indexing)
-python -m alerts_generator --count 10 --dry-run
+# Generate correlated campaign
+python -m secgen generate \
+  --count 100 \
+  --world-file campaign_world.json \
+  --campaign \
+  --hosts 10 \
+  --speed slow \
+  --time-spread days \
+  --working-hours
 
-# Save to JSON file
-python -m alerts_generator --count 50 --output alerts.json
-
-# Delete all logs and alerts from Elasticsearch
-python -m alerts_generator --delete-all
+# View generated data in Kibana Security
 ```
 
-### Campaign Scenarios
+### Test Specific Detection Rules
 
 ```bash
-# Ransomware outbreak across organization
-python -m alerts_generator --count 100 --campaign --campaign-hosts 20 \
-  --attack-speed fast --index-all
+# DGA detection rules
+python -m secgen perf-test --events 100 --types dns
 
-# Slow APT campaign over weeks
-python -m alerts_generator --count 200 --campaign --campaign-hosts 10 \
-  --attack-speed slow --time-spread weeks --working-hours
+# Brute force detection
+python -m secgen perf-test --events 200 --types auth
 
-# Crypto mining infection
-python -m alerts_generator --count 50 --campaign --campaign-hosts 30 \
-  --attack-speed medium --time-spread days
+# Cloud security rules
+python -m secgen perf-test --events 100 --types aws azure gcp
 ```
 
-### Custom Scenarios
+### Generate Data for Network Map
 
 ```bash
-# Use custom attack scenarios
-python -m alerts_generator --count 25 --scenarios-file my_scenarios.yaml
-
-# Custom scenarios with campaign
-python -m alerts_generator --count 100 --scenarios-file apt_scenarios.yaml \
-  --campaign --campaign-hosts 15 --attack-speed slow
+# Network flows with geo-enrichment
+python -m secgen generate --count 500 --use-world
 ```
 
-### Testing & Development
+## Architecture
+
+> 📖 **For detailed documentation on how data generation works**, see [docs/DATA_GENERATION.md](docs/DATA_GENERATION.md)
+
+```
+secgen/
+├── core/
+│   ├── __init__.py
+│   └── world.py              # World state management
+├── models/
+│   ├── entities/             # Host, User, ProcessTree models
+│   │   ├── host.py
+│   │   ├── user.py
+│   │   └── process_tree.py
+│   ├── scenario.py           # Legacy + Multi-event scenarios
+│   ├── campaign.py
+│   └── alert.py
+├── generators/
+│   ├── endpoint/             # Endpoint event generators
+│   │   ├── file.py
+│   │   ├── registry.py
+│   │   └── network.py
+│   ├── network/              # Network event generators
+│   │   ├── dns.py
+│   │   ├── flow.py
+│   │   ├── http.py
+│   │   └── tls.py
+│   ├── identity/             # Identity event generators
+│   │   ├── auth.py
+│   │   └── iam.py
+│   ├── cloud/                # Cloud audit log generators
+│   │   ├── aws.py
+│   │   ├── azure.py
+│   │   └── gcp.py
+│   ├── threat_intel/         # Threat intelligence
+│   │   └── indicators.py
+│   ├── alert.py              # Detection alert generator
+│   ├── process.py            # Process event generator
+│   ├── campaign.py           # Campaign generator
+│   └── randomizers.py        # Random data utilities
+├── indexers/
+│   ├── base.py
+│   └── elasticsearch.py      # Multi-index bulk operations
+├── time_distribution/
+│   └── strategies.py         # Time distribution strategies
+├── config/
+│   ├── loader.py             # YAML scenario loading
+│   └── settings.py           # Pydantic settings
+├── core.py                   # Alert orchestration
+└── cli.py                    # CLI with subcommands
+```
+
+## Indices Used
+
+| Index Pattern | Event Type |
+|---------------|------------|
+| `.alerts-security.alerts-default` | Detection rule alerts |
+| `logs-endpoint.events.process-*` | Process events |
+| `logs-endpoint.events.file-*` | File events |
+| `logs-endpoint.events.registry-*` | Registry events |
+| `logs-endpoint.events.network-*` | Endpoint network events |
+| `logs-endpoint.alerts-*` | Endpoint alerts |
+| `logs-dns.query-*` | DNS events |
+| `logs-network_traffic.flow-*` | Network flows |
+| `logs-network_traffic.http-*` | HTTP events |
+| `logs-network_traffic.tls-*` | TLS events |
+| `logs-system.auth-*` | Authentication events |
+| `logs-aws.cloudtrail-*` | AWS CloudTrail |
+| `logs-azure.signinlogs-*` | Azure sign-in logs |
+| `logs-azure.auditlogs-*` | Azure audit logs |
+| `logs-gcp.audit-*` | GCP audit logs |
+| `logs-ti_util.logs-*` | Threat indicators |
+
+## Data Management
+
+### Delete All Generated Data
 
 ```bash
-# Quick test with 5 alerts
-python -m alerts_generator --count 5 --dry-run
-
-# Generate large dataset for performance testing
-python -m alerts_generator --count 1000 --time-spread weeks --output large_dataset.json
-
-# Realistic production simulation
-python -m alerts_generator --count 500 --time-spread days --working-hours \
-  --campaign --campaign-hosts 50 --attack-speed medium --index-all
+python -m secgen --delete-all
 ```
 
-## Command-Line Reference
+This clears all indices listed above.
 
-### Required Arguments
+## Command Reference
 
-- `--count N` - Number of alerts to generate (default: 10)
+### Global Options
 
-### Mode Options
+| Option | Description |
+|--------|-------------|
+| `--count N` | Number of alerts/events (default: 10) |
+| `--dry-run` | Generate without indexing |
+| `--output FILE` | Save to JSON file |
+| `--scenarios-file FILE` | Load scenarios from YAML |
 
-- `--index-all` - Index immediately without preview
-- `--dry-run` - Generate without indexing
-- `--output FILE` - Save to JSON file
-- `--delete-all` - Delete all data (logs and alerts) from Elasticsearch indices
+### Campaign Options
 
-### Configuration
-
-- `--scenarios-file FILE` - Load scenarios from YAML
-
-### Campaign Mode
-
-- `--campaign` - Enable campaign mode
-- `--campaign-hosts N` - Number of hosts (default: 5)
-- `--attack-speed SPEED` - Speed: fast, medium, slow (default: medium)
+| Option | Description |
+|--------|-------------|
+| `--campaign` | Enable campaign mode |
+| `--campaign-hosts N` | Number of hosts (default: 5) |
+| `--attack-speed SPEED` | fast, medium, slow (default: medium) |
 
 ### Time Distribution
 
-- `--time-spread UNIT` - Time range: minutes, hours, days, weeks (default: minutes)
-- `--working-hours` - Weight to business hours (8am-6pm)
-- `--timezone TZ` - Timezone (default: UTC)
+| Option | Description |
+|--------|-------------|
+| `--time-spread UNIT` | minutes, hours, days, weeks (default: minutes) |
+| `--working-hours` | Weight to business hours (8am-6pm) |
 
-## Output
+### World State Options
 
-### Summary Statistics
+| Option | Description |
+|--------|-------------|
+| `--use-world` | Enable World state correlation |
+| `--world-file FILE` | Load World from file |
+| `--save-world FILE` | Save World after generation |
+| `--hosts N` | Number of hosts for ephemeral World |
+| `--users N` | Number of users for ephemeral World |
 
-```
-📊 GENERATION SUMMARY
-======================================================================
+## Best Practices
 
-Scenario Distribution:
-  Web Shell Deployment        :  15 alerts
-  Ransomware                  :  20 alerts
-  Lateral Movement            :  12 alerts
-  Data Exfiltration           :   8 alerts
-
-Severity Distribution:
-  medium    :  15 alerts
-  high      :  35 alerts
-  critical  :  20 alerts
-
-✅ Successfully indexed: 70/70 alerts
-```
-
-### Alert Details
-
-Each alert includes:
-
-- Detection rule alert (`.alerts-security.alerts-default`)
-- Process events (2-5 processes per alert)
-- Endpoint alert
-- Full ECS field compliance
-
-## Installation Requirements
-
-**Required:**
-
-```bash
-pip install requests
-```
-
-**Optional (for YAML support):**
-
-```bash
-pip install pyyaml
-```
-
-Without PyYAML, the script uses hardcoded scenarios only.
-
-## Data Generated
-
-### Indices Used
-
-- `.alerts-security.alerts-default` - Detection rule alerts
-- `logs-endpoint.events.process-default` - Process events
-- `logs-endpoint.alerts-default` - Endpoint alerts
-
-### Data Management
-
-**Delete All Data:**
-
-```bash
-python -m alerts_generator --delete-all
-```
-
-This command deletes all documents from:
-- `.alerts-security.alerts-default` (Kibana security alerts)
-- `logs-endpoint.events.process-*` (all process event indices)
-- `logs-endpoint.alerts-*` (all endpoint alert indices)
-
-The command provides a summary showing how many documents were deleted from each index pattern. Missing or empty indices are handled gracefully.
-
-### Fields Populated
-
-- All standard ECS fields
-- Kibana alert fields (`kibana.alert.*`)
-- Process hierarchies with entity IDs
-- Session leader information
-- File hashes and metadata
-- Host information (IPs, MACs, hostnames)
-
-## Tips & Best Practices
-
-1. **Start Small**: Test with `--count 5 --dry-run` first
-2. **Use Campaigns for Realism**: Mimics real attacker behavior
-3. **Time Distribution**: Use `--working-hours` for realistic patterns
-4. **Custom Scenarios**: Create scenarios matching your threat model
-5. **Save to File**: Use `--output` to review before indexing
-6. **Large Datasets**: For 1000+ alerts, consider running overnight
-7. **Clean Slate**: Use `--delete-all` to clear all generated data before new test runs
+1. **Use World State**: Always use `--use-world` for proper entity correlation
+2. **Persistent World**: Save World state for consistent testing across sessions
+3. **Campaign Mode**: Use campaigns to test correlation features
+4. **Time Distribution**: Use `--working-hours` for realistic patterns
+5. **Start Small**: Test with `--count 5 --dry-run` first
+6. **Custom Scenarios**: Create multi-event scenarios matching your threat model
+7. **Performance Testing**: Use `perf-test` to benchmark before large runs
 
 ## Troubleshooting
 
-**PyYAML not available**
+### PyYAML not available
 
 ```
 ⚠️  PyYAML not available - using hardcoded scenarios only
 ```
 
-Solution: `pip install pyyaml` or omit `--scenarios-file`
+Solution: `pip install pyyaml`
 
-**Scenarios file not found**
+### Pydantic not available
 
 ```
-❌ Scenarios file not found: my_file.yaml
+ModuleNotFoundError: No module named 'pydantic'
 ```
 
-Solution: Check file path, use absolute path if needed
+Solution: `pip install pydantic pydantic-settings`
 
-**Failed to index**
+### Failed to index
 
 ```
 ❌ Failed to index alert: 401
 ```
 
-Solution: Check ELASTIC_URL, USERNAME, PASSWORD in script
+Solution: Check ELASTIC_URL, USERNAME, PASSWORD environment variables
 
-## Architecture
-
-```
-alerts_generator/
-├── config/              # Configuration management (Pydantic)
-├── models/              # Data models (Campaign, Scenario, Alert)
-├── generators/          # Alert and event generators
-│   ├── alert.py         # Detection rule alert generator
-│   ├── process.py       # Process event generator
-│   ├── campaign.py      # Campaign generator
-│   └── randomizers.py   # Random data utilities
-├── indexers/            # Storage backends
-│   └── elasticsearch.py # Elasticsearch implementation
-├── time_distribution/   # Time distribution strategies
-├── utils/               # Utilities (logging)
-├── core.py              # Main orchestration
-└── cli.py               # Command-line interface
-```
-
-### Data Flow
+### World file not found
 
 ```
-Campaign Generator
-  ├─ Shared Infrastructure
-  │   ├─ Attacker IP
-  │   ├─ C2 Domain/IP
-  │   └─ Malware Family
-  ├─ Target Hosts [N]
-  └─ Attack Phases
-      ├─ Initial Access (10%)
-      ├─ Execution (30%)
-      ├─ Lateral Movement (40%)
-      └─ Exfiltration (20%)
-
-Alert Generator
-  ├─ Detection Rule Alert (.alerts-security.alerts-default)
-  ├─ Process Events (2-5) (logs-endpoint.events.process-default)
-  │   └─ Process Hierarchy with Entity IDs
-  └─ Endpoint Alert (logs-endpoint.alerts-default)
+❌ World file not found: world.json
 ```
 
-## Related Files
-
-- `alerts_generator/` - Main package directory
-- `alert_scenarios.yaml` - Default scenarios configuration
-- `example_custom_scenarios.yaml` - Custom scenario examples
+Solution: Create World first with `python -m secgen world create --save world.json`
 
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on contributing to this project.
+
+## License
+
+MIT License - See LICENSE file for details.

@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-from alerts_generator.config.loader import load_scenarios_from_file
+from secgen.config.loader import load_scenarios_from_file
 
 
 def test_load_scenarios_from_file_with_valid_yaml():

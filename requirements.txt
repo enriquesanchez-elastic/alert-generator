@@ -1,8 +1,15 @@
-# Required dependencies
+# Security Data Generator - Dependencies
+# 
+# Recommended: Use uv for fast dependency management
+#   uv pip install -r requirements.txt
+#   uv pip install -e ".[dev]"
+#
+# Or with pip:
+#   pip install -r requirements.txt
+
+# Core dependencies
 requests>=2.31.0
 python-dotenv>=1.0.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
-
-# Optional but recommended for YAML configuration file support
-pyyaml>=6.0
+pyyaml>=6.0.1

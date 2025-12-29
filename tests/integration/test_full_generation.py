@@ -1,6 +1,6 @@
 """Integration tests for full alert generation pipeline."""
 
-from alerts_generator.core import AlertOrchestrator
+from secgen.core import AlertOrchestrator
 
 
 def test_complete_alert_generation_pipeline(settings, mock_indexer, multiple_scenarios):
