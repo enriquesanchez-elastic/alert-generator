@@ -206,4 +206,3 @@ class CommandLibraryGenerator(BaseArtifactGenerator):
     def list_categories(tactic: str) -> list[str]:
         """Get list of categories for a tactic."""
         return TACTIC_CATEGORIES.get(tactic.lower(), ["general"])
-

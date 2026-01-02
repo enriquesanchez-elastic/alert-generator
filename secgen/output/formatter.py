@@ -6,7 +6,6 @@ without external dependencies (pure Python with simple ANSI codes).
 
 import json
 from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Any
 
 
@@ -286,9 +285,7 @@ class OutputFormatter:
             lines.append("-" * sum(widths) + "-" * (len(widths) * 3))
 
         # Header row
-        header_line = "  ".join(
-            f"{c.BOLD}{h:<{widths[i]}}{c.RESET}" for i, h in enumerate(headers)
-        )
+        header_line = "  ".join(f"{c.BOLD}{h:<{widths[i]}}{c.RESET}" for i, h in enumerate(headers))
         lines.append(header_line)
         lines.append("-" * sum(widths) + "-" * (len(widths) * 3))
 
@@ -356,5 +353,4 @@ class OutputFormatter:
     def build_kibana_analyzer_link(base_url: str, process_entity_id: str) -> str:
         """Build a Kibana Analyzer link for a process."""
         return f"{base_url}/app/security/hosts/events?query=process.entity_id:{process_entity_id}"
-
 

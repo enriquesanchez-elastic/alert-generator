@@ -50,7 +50,12 @@ TACTIC_DESCRIPTIONS = {
 }
 
 TACTIC_CATEGORIES = {
-    "reconnaissance": ["network_scanning", "user_enumeration", "service_discovery", "share_enumeration"],
+    "reconnaissance": [
+        "network_scanning",
+        "user_enumeration",
+        "service_discovery",
+        "share_enumeration",
+    ],
     "initial_access": ["phishing_payloads", "exploitation", "credential_stuffing"],
     "execution": ["powershell", "wmi", "cmd", "scripting", "scheduled_tasks"],
     "persistence": ["registry", "scheduled_tasks", "services", "startup_items"],
@@ -252,6 +257,7 @@ CAMPAIGN_OBJECTIVES = {
 # HELPER FUNCTIONS
 # =============================================================================
 
+
 def get_command_library_prompt(
     tactic: str,
     count: int = 30,
@@ -337,10 +343,7 @@ def get_entity_profile_prompt(
     Returns:
         Formatted prompt string
     """
-    industry_context = INDUSTRY_CONTEXTS.get(
-        industry.lower(),
-        "Standard corporate environment"
-    )
+    industry_context = INDUSTRY_CONTEXTS.get(industry.lower(), "Standard corporate environment")
 
     full_context = f"{industry_context}. {context}".strip()
 
@@ -374,14 +377,8 @@ def get_campaign_narrative_prompt(
     Returns:
         Formatted prompt string
     """
-    actor_profile = THREAT_ACTOR_PROFILES.get(
-        threat_actor,
-        THREAT_ACTOR_PROFILES["generic_apt"]
-    )
-    objective_desc = CAMPAIGN_OBJECTIVES.get(
-        objective,
-        objective
-    )
+    actor_profile = THREAT_ACTOR_PROFILES.get(threat_actor, THREAT_ACTOR_PROFILES["generic_apt"])
+    objective_desc = CAMPAIGN_OBJECTIVES.get(objective, objective)
 
     return CAMPAIGN_NARRATIVE_PROMPT.format(
         threat_actor=f"{threat_actor} - {actor_profile}",
@@ -391,4 +388,3 @@ def get_campaign_narrative_prompt(
         org_size=org_size,
         target_os=target_os,
     )
-

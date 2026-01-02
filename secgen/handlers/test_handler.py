@@ -261,4 +261,3 @@ def _print_verification_steps(feature, summary: GenerationSummary) -> None:
         user_names = summary.correlation_ids["user.name"][:3]
         query = "user.name:(" + " OR ".join(user_names) + ")"
         print(f"  Filter by user: {query}")
-

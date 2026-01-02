@@ -351,9 +351,7 @@ def cmd_llm(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> 
     """Handle LLM artifact generation commands."""
     # Check for API key
     if not settings.gemini_api_key:
-        logger.error(
-            "Gemini API key not configured. Set GEMINI_API_KEY environment variable."
-        )
+        logger.error("Gemini API key not configured. Set GEMINI_API_KEY environment variable.")
         return
 
     try:
@@ -542,8 +540,10 @@ def cmd_llm(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> 
     if hasattr(client, "total_tokens_used"):
         usage = client.total_tokens_used
         if usage["total_tokens"] > 0:
-            print(f"\nToken usage: {usage['total_tokens']} total "
-                  f"({usage['prompt_tokens']} prompt, {usage['completion_tokens']} completion)")
+            print(
+                f"\nToken usage: {usage['total_tokens']} total "
+                f"({usage['prompt_tokens']} prompt, {usage['completion_tokens']} completion)"
+            )
 
 
 def main() -> None:
@@ -620,7 +620,9 @@ Examples:
 
     # Generate subcommand (supports both legacy and event-type modes)
     gen_parser = subparsers.add_parser("generate", help="Generate events (by type or legacy mode)")
-    gen_parser.add_argument("event_type", nargs="?", help="Event type to generate (e.g., dns, file, process)")
+    gen_parser.add_argument(
+        "event_type", nargs="?", help="Event type to generate (e.g., dns, file, process)"
+    )
     gen_parser.add_argument("--count", type=int, default=10, help="Number of events")
     gen_parser.add_argument("--param", action="append", help="Parameter key=value (can repeat)")
     gen_parser.add_argument("--scenario", type=str, help="Scenario file (legacy mode)")
@@ -639,7 +641,9 @@ Examples:
     )
     gen_parser.add_argument("--working-hours", action="store_true")
     gen_parser.add_argument("--speed", default="medium", choices=["fast", "medium", "slow"])
-    gen_parser.add_argument("--use-llm-artifacts", action="store_true", help="Use LLM-generated artifacts")
+    gen_parser.add_argument(
+        "--use-llm-artifacts", action="store_true", help="Use LLM-generated artifacts"
+    )
     gen_parser.add_argument("--industry", default="technology", help="Industry for LLM profiles")
     gen_parser.add_argument(
         "--full-llm",
@@ -648,7 +652,9 @@ Examples:
     )
     gen_parser.add_argument("--threat-actor", default="APT29", help="Threat actor for LLM campaign")
     gen_parser.add_argument("--target-os", default="windows", choices=["windows", "linux", "macos"])
-    gen_parser.add_argument("--force-regenerate", action="store_true", help="Force LLM artifact regeneration")
+    gen_parser.add_argument(
+        "--force-regenerate", action="store_true", help="Force LLM artifact regeneration"
+    )
 
     # List subcommand
     list_parser = subparsers.add_parser("list", help="List event types and attack patterns")
@@ -684,8 +690,15 @@ Examples:
     test_parser = subparsers.add_parser("test", help="Test Elastic Security features")
     test_parser.add_argument(
         "feature",
-        choices=["network-map", "timeline", "analyzer", "entity-analytics",
-                 "detection-rule", "vulnerability-management", "cloud-posture"],
+        choices=[
+            "network-map",
+            "timeline",
+            "analyzer",
+            "entity-analytics",
+            "detection-rule",
+            "vulnerability-management",
+            "cloud-posture",
+        ],
         help="Feature to test",
     )
     test_parser.add_argument("--count", type=int, help="Override default event count")
@@ -697,8 +710,12 @@ Examples:
     # Preset subcommand
     preset_parser = subparsers.add_parser("preset", help="Run preset configurations")
     preset_parser.add_argument("preset_name", nargs="?", help="Preset name or YAML file path")
-    preset_parser.add_argument("--list", "-l", action="store_true", help="List all available presets")
-    preset_parser.add_argument("--no-index", action="store_true", help="Don't index to Elasticsearch")
+    preset_parser.add_argument(
+        "--list", "-l", action="store_true", help="List all available presets"
+    )
+    preset_parser.add_argument(
+        "--no-index", action="store_true", help="Don't index to Elasticsearch"
+    )
     preset_parser.add_argument("--output", type=str, help="Save all events to JSON file")
     preset_parser.add_argument("--json", action="store_true", help="Output JSON format")
 
@@ -713,7 +730,9 @@ Examples:
     llm_cmd_parser.add_argument("--actor", default="generic_apt", help="Threat actor style")
     llm_cmd_parser.add_argument("--os", default="windows", choices=["windows", "linux", "macos"])
     llm_cmd_parser.add_argument("--force", action="store_true", help="Force regeneration")
-    llm_cmd_parser.add_argument("--list-tactics", action="store_true", help="List available tactics")
+    llm_cmd_parser.add_argument(
+        "--list-tactics", action="store_true", help="List available tactics"
+    )
 
     # LLM scenarios subcommand
     llm_scn_parser = llm_subparsers.add_parser("scenarios", help="Generate scenario variations")
@@ -726,7 +745,9 @@ Examples:
     llm_prof_parser = llm_subparsers.add_parser("profiles", help="Generate entity profiles")
     llm_prof_parser.add_argument("--industry", default="technology", help="Industry vertical")
     llm_prof_parser.add_argument("--roles", type=int, default=10, help="Number of roles")
-    llm_prof_parser.add_argument("--org-size", default="medium", choices=["small", "medium", "large"])
+    llm_prof_parser.add_argument(
+        "--org-size", default="medium", choices=["small", "medium", "large"]
+    )
     llm_prof_parser.add_argument("--force", action="store_true", help="Force regeneration")
     llm_prof_parser.add_argument("--list-industries", action="store_true", help="List industries")
 
@@ -736,7 +757,9 @@ Examples:
     llm_camp_parser.add_argument("--target", default="technology", help="Target sector")
     llm_camp_parser.add_argument("--days", type=int, default=14, help="Campaign duration (days)")
     llm_camp_parser.add_argument("--objective", default="data_theft", help="Campaign objective")
-    llm_camp_parser.add_argument("--org-size", default="medium", choices=["small", "medium", "large"])
+    llm_camp_parser.add_argument(
+        "--org-size", default="medium", choices=["small", "medium", "large"]
+    )
     llm_camp_parser.add_argument("--os", default="windows", choices=["windows", "linux", "macos"])
     llm_camp_parser.add_argument("--force", action="store_true", help="Force regeneration")
     llm_camp_parser.add_argument("--list-actors", action="store_true", help="List threat actors")
@@ -749,7 +772,9 @@ Examples:
         choices=["stats", "list", "clear"],
         help="Cache action",
     )
-    llm_cache_parser.add_argument("--type", help="Artifact type (commands, scenarios, profiles, campaigns)")
+    llm_cache_parser.add_argument(
+        "--type", help="Artifact type (commands, scenarios, profiles, campaigns)"
+    )
 
     # Perf-test subcommand
     perf_parser = subparsers.add_parser("perf-test", help="Performance testing")
@@ -760,6 +785,15 @@ Examples:
     # Sample-scenario subcommand
     sample_parser = subparsers.add_parser("sample-scenario", help="Generate sample scenario")
     sample_parser.add_argument("--output", type=str, help="Output file")
+
+    # MCP subcommand
+    mcp_parser = subparsers.add_parser("mcp", help="Start MCP server for Claude Desktop")
+    mcp_parser.add_argument(
+        "--log-level",
+        default="INFO",
+        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
+        help="Logging level for MCP server",
+    )
 
     # Legacy arguments (for backward compatibility)
     parser.add_argument("--count", type=int, default=10, help="Number of alerts")
@@ -793,6 +827,7 @@ Examples:
         if hasattr(args, "event_type") and args.event_type:
             # New event-type mode
             from secgen.handlers.generate_handler import handle_generate
+
             handle_generate(args)
             return
         else:
@@ -802,26 +837,31 @@ Examples:
 
     if args.command == "list":
         from secgen.handlers.list_handler import handle_list
+
         handle_list(args)
         return
 
     if args.command == "describe":
         from secgen.handlers.describe_handler import handle_describe
+
         handle_describe(args)
         return
 
     if args.command == "attack":
         from secgen.handlers.attack_handler import handle_attack
+
         handle_attack(args)
         return
 
     if args.command == "test":
         from secgen.handlers.test_handler import handle_test
+
         handle_test(args)
         return
 
     if args.command == "preset":
         from secgen.handlers.preset_handler import handle_preset
+
         handle_preset(args)
         return
 
@@ -831,6 +871,17 @@ Examples:
 
     if args.command == "sample-scenario":
         cmd_sample_scenario(args, logger)
+        return
+
+    if args.command == "mcp":
+        import asyncio
+
+        # Import and run MCP server
+        # Note: MCP server's main() handles all logging configuration internally
+        # to ensure stdout remains clean for JSON-RPC protocol
+        from secgen.mcp.server import main as mcp_main
+
+        asyncio.run(mcp_main())
         return
 
     if args.command == "llm":

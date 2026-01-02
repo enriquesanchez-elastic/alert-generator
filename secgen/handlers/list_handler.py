@@ -151,6 +151,7 @@ def _list_feature_tests(args: argparse.Namespace) -> None:
     # Import here to avoid circular imports
     try:
         from secgen.features.definitions import get_feature_tests
+
         features = get_feature_tests()
     except ImportError:
         # Features module not yet implemented
@@ -175,4 +176,3 @@ def _list_feature_tests(args: argparse.Namespace) -> None:
 
     print("\n" + "=" * 70)
     print("\nUse 'secgen test <feature-name> --index' to generate test data")
-

@@ -155,6 +155,173 @@ python -m secgen sample-scenario --output my_scenario.yaml
 python -m secgen perf-test --events 10000 --types file network dns
 ```
 
+## MCP Server for Claude Desktop
+
+**NEW!** secgen now includes a Model Context Protocol (MCP) server that enables Claude Desktop and other MCP clients to discover and use secgen's event generators through natural language.
+
+### Quick Start with Claude Desktop
+
+1. **Install secgen with MCP support**:
+   ```bash
+   uv pip install -e .  # MCP dependencies included automatically
+   ```
+
+2. **Configure Claude Desktop**:
+
+   Add to your `claude_desktop_config.json` (use the full path to `run_mcp.sh`):
+   
+   **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
+   **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
+   
+   ```json
+   {
+     "mcpServers": {
+       "secgen": {
+         "command": "/full/path/to/alert-generator/run_mcp.sh",
+         "env": {
+           "ELASTIC_URL": "localhost:9200",
+           "ELASTIC_USERNAME": "elastic",
+           "ELASTIC_PASSWORD": "changeme"
+         }
+       }
+     }
+   }
+   ```
+   
+   The `run_mcp.sh` script handles virtual environment activation automatically.
+
+3. **Use with Claude**:
+   ```
+   User: "List all available event types for network security"
+   Claude: [Uses list_event_types tool with category filter]
+
+   User: "I need to test DNS tunneling detection in Elastic"
+   Claude: [Uses list_attack_patterns, describe_attack_pattern, then execute_attack]
+
+   User: "Create a test environment with 20 Windows hosts"
+   Claude: [Uses create_world tool]
+   ```
+
+### MCP Tools Available
+
+The MCP server provides **15 tools** organized into 5 categories:
+
+**Discovery (4 tools)** ✅:
+- `list_event_types` - List event generators with category filtering
+- `list_attack_patterns` - List attack patterns with MITRE ATT&CK filtering
+- `describe_event_type` - Get detailed metadata for an event type
+- `describe_attack_pattern` - Get detailed metadata with TTPs and detection recommendations
+
+**Generation (3 tools)** ✅:
+- `generate_events` - Generate events by type with parameters
+- `execute_attack` - Execute attack patterns (multi-event sequences)
+- `generate_campaign` - Generate correlated attack campaigns
+
+**World State (4 tools)** ✅:
+- `create_world` - Create/reset World state for entity correlation
+- `get_world_info` - Get World summary
+- `save_world` - Save World to file
+- `load_world` - Load World from file
+
+**Testing (1 tool)** ✅:
+- `test_elastic_feature` - Generate data for Elastic features (network-map, timeline, etc.)
+
+**Utility (3 tools)** ✅:
+- `validate_elasticsearch` - Check ES connection
+- `get_capabilities` - Get server capabilities
+- `index_events` - Enable indexing (requires explicit confirmation)
+
+### MCP Server Features
+
+- **Dry-run by default**: Safe exploration without accidental writes to Elasticsearch
+- **Entity correlation**: Session-based World state for consistent host.id and user.name
+- **MITRE ATT&CK integration**: All attack patterns mapped to TTPs
+- **ECS compliance**: All events follow Elastic Common Schema
+- **Safety gates**: Indexing requires explicit confirmation flags
+
+### Example Conversations with Claude
+
+**Detection rule testing**:
+```
+You: "I wrote a detection rule for DNS tunneling. Can you generate 
+     test data to validate it?"
+
+Claude: I'll generate DNS tunneling attack data and some baseline 
+        normal DNS traffic.
+        
+        [Executes dns-tunneling attack pattern]
+        [Generates 500 benign DNS events]
+        
+        Generated 450 malicious DNS events with:
+        • High-entropy subdomain queries
+        • TXT record lookups to tunnel.exfil.net
+        
+        Plus 500 normal DNS events for baseline.
+        Your rule should fire on the malicious events.
+```
+
+**SOC analyst training**:
+```
+You: "Create a training scenario with 3 different attacks for 
+     our new SOC analysts to investigate"
+
+Claude: [Creates World with hosts/users]
+        [Executes brute-force, c2-beacon, and data-exfiltration]
+        
+        Created 3 investigation scenarios:
+        1. Credential attack: 50 failed logins from 203.0.113.45
+        2. C2 beacon: Every 60s to suspicious-cdn.com
+        3. Data exfiltration: 500MB transferred over 2 hours
+        
+        Each scenario has unique correlation IDs for Timeline.
+```
+
+**Feature demonstration**:
+```
+You: "I need to demo Elastic's Network Map for a customer"
+
+Claude: [Calls test_elastic_feature with feature="network-map"]
+        
+        Generated 200 network flow events with:
+        • Internal and external traffic
+        • Geographic data for map placement
+        • Community IDs for flow correlation
+        
+        Open Security > Network > Network Map to see the visualization.
+```
+
+### MCP Server Architecture
+
+```
+secgen/mcp/
+├── server.py              # Main MCP server (stdio transport)
+├── state.py               # Session state management
+├── schemas.py             # JSON schemas for tool arguments
+├── formatters.py          # Response formatting utilities
+└── tools/
+    ├── discovery.py       # Discovery tools (✅ fully implemented)
+    ├── generation.py      # Generation tools (✅ fully implemented)
+    ├── world.py           # World state tools (✅ fully implemented)
+    ├── testing.py         # Feature testing tools (✅ fully implemented)
+    └── utility.py         # Utility tools (✅ fully implemented)
+```
+
+> 📖 **For detailed MCP documentation**, see [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md)
+
+### Start MCP Server Manually
+
+```bash
+# Using the convenience script (recommended)
+./run_mcp.sh
+
+# With debug logging
+./run_mcp.sh --log-level DEBUG
+
+# Or using the module directly
+secgen mcp
+python -m secgen mcp --log-level DEBUG
+```
+
 ## CLI Commands
 
 ### Legacy Mode (Backward Compatible)

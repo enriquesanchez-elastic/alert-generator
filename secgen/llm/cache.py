@@ -82,7 +82,9 @@ class ArtifactCache:
             Full path to artifact file
         """
         if artifact_type not in self.SUBDIRS:
-            raise ValueError(f"Invalid artifact type: {artifact_type}. Must be one of {self.SUBDIRS}")
+            raise ValueError(
+                f"Invalid artifact type: {artifact_type}. Must be one of {self.SUBDIRS}"
+            )
         return self.base_dir / artifact_type / f"{name}.{extension}"
 
     def exists(self, artifact_type: str, name: str, extension: str = "json") -> bool:
@@ -259,15 +261,17 @@ class ArtifactCache:
         for path in subdir.iterdir():
             if path.is_file() and path.suffix in [".json", ".yaml"]:
                 stat = path.stat()
-                artifacts.append({
-                    "name": path.stem,
-                    "path": str(path),
-                    "extension": path.suffix[1:],
-                    "size_bytes": stat.st_size,
-                    "modified_at": datetime.fromtimestamp(
-                        stat.st_mtime, tz=timezone.utc
-                    ).isoformat(),
-                })
+                artifacts.append(
+                    {
+                        "name": path.stem,
+                        "path": str(path),
+                        "extension": path.suffix[1:],
+                        "size_bytes": stat.st_size,
+                        "modified_at": datetime.fromtimestamp(
+                            stat.st_mtime, tz=timezone.utc
+                        ).isoformat(),
+                    }
+                )
 
         return sorted(artifacts, key=lambda x: x["modified_at"], reverse=True)
 
@@ -358,4 +362,3 @@ def get_artifact_cache(settings: Any) -> ArtifactCache:
         base_dir=settings.llm_artifacts_path,
         enabled=settings.llm_cache_enabled,
     )
-

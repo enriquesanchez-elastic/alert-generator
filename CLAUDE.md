@@ -215,6 +215,75 @@ secgen/
 - `finalize_attack_patterns()`: Called in bootstrap to link methods to their classes
 - Supports filtering by category (endpoint, network, identity, cloud, etc.) and MITRE ATT&CK TTPs
 
+**MCP Server** (`mcp/` - NEW):
+- Model Context Protocol server for Claude Desktop integration
+- Exposes secgen capabilities through 15 MCP tools organized into 5 categories
+- Uses stdio transport for Claude Desktop communication
+- Session-based World state management for entity correlation across tool calls
+- Dry-run by default with explicit opt-in for Elasticsearch indexing (safety gate)
+
+**MCP Architecture**:
+```
+secgen/mcp/
+├── server.py              # Main MCP server with stdio transport
+│                          # - Registers 15 tools
+│                          # - Routes tool calls to handlers
+│                          # - Manages session state
+│                          # - Error handling and logging
+├── state.py               # Session state management
+│                          # - MCPState class: World, events, config
+│                          # - Methods: get_or_create_world(), add_events()
+│                          # - Tracks statistics and correlation
+├── schemas.py             # JSON schemas for all 15 tool arguments
+│                          # - Input validation using JSON Schema
+│                          # - Defines required/optional parameters
+├── formatters.py          # Response formatting utilities
+│                          # - format_success_response()
+│                          # - format_error_response()
+│                          # - Consistent JSON formatting
+└── tools/                 # Tool implementations (ALL IMPLEMENTED)
+    ├── discovery.py       # ✅ IMPLEMENTED
+    │                      # - list_event_types
+    │                      # - list_attack_patterns
+    │                      # - describe_event_type
+    │                      # - describe_attack_pattern
+    ├── generation.py      # ✅ IMPLEMENTED - uses core_operations.py
+    │                      # - generate_events
+    │                      # - execute_attack
+    │                      # - generate_campaign
+    ├── world.py           # ✅ IMPLEMENTED - wraps MCPState methods
+    │                      # - create_world
+    │                      # - get_world_info
+    │                      # - save_world
+    │                      # - load_world
+    ├── testing.py         # ✅ IMPLEMENTED - uses core_operations.py
+    │                      # - test_elastic_feature
+    └── utility.py         # ✅ IMPLEMENTED
+                           # - validate_elasticsearch
+                           # - get_capabilities
+                           # - index_events (safety gate)
+```
+
+**MCP Design Decisions**:
+1. **Shared Core Operations**: MCP tools and CLI handlers share logic via `generators/core_operations.py`
+2. **Session-Based World**: Ephemeral World created on first use, persists across tool calls
+3. **Dry-Run Default**: Safe default prevents accidental Elasticsearch writes
+4. **stdio Transport Only**: Simplest for Claude Desktop, can add SSE/HTTP later
+5. **Async Architecture**: All tool handlers are async for compatibility with MCP SDK
+
+**MCP Tool Categories** (All Implemented):
+- **Discovery (4)**: Query registry for event types and attack patterns
+- **Generation (3)**: Generate events, execute attacks, create campaigns
+- **World State (4)**: Manage entity correlation across tool calls
+- **Testing (1)**: Generate feature-specific test data
+- **Utility (3)**: Validate ES, get capabilities, enable indexing
+
+**Integration Points**:
+- `cli.py`: Added `mcp` subcommand to start server
+- `generators/core_operations.py`: Shared business logic for MCP tools and CLI handlers
+- `registry.py`: Queried by discovery tools
+- `core/world.py`: Used for session state management
+
 ## Development Patterns
 
 ### Adding a New Event Generator

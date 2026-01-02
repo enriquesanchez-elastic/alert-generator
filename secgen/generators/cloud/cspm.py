@@ -2,7 +2,7 @@
 
 import random
 from datetime import datetime, timedelta, timezone
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from secgen.generators.randomizers import RandomDataGenerator
 from secgen.registry import GeneratorCategory, register_event_type
@@ -159,8 +159,16 @@ class CSPMGenerator:
     # Resource types by cloud provider
     RESOURCE_TYPES = {
         "aws": ["ec2:instance", "s3:bucket", "iam:user", "rds:db-instance", "vpc:security-group"],
-        "azure": ["microsoft.compute/virtualmachines", "microsoft.storage/storageaccounts", "microsoft.sql/servers"],
-        "gcp": ["compute.googleapis.com/Instance", "storage.googleapis.com/Bucket", "iam.googleapis.com/ServiceAccount"],
+        "azure": [
+            "microsoft.compute/virtualmachines",
+            "microsoft.storage/storageaccounts",
+            "microsoft.sql/servers",
+        ],
+        "gcp": [
+            "compute.googleapis.com/Instance",
+            "storage.googleapis.com/Bucket",
+            "iam.googleapis.com/ServiceAccount",
+        ],
     }
 
     def __init__(self, randomizer: RandomDataGenerator | None = None) -> None:
@@ -341,5 +349,4 @@ class CSPMGenerator:
             events.append(event)
 
         return events
-
 

@@ -6,7 +6,7 @@ import random
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from secgen.models.campaign import Campaign
 from secgen.models.entities.host import Host, OSInfo

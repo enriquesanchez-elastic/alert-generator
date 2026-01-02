@@ -169,4 +169,3 @@ class BaseArtifactGenerator(ABC):
         if not deleted:
             deleted = self.cache.delete(self.ARTIFACT_TYPE, artifact_name, "yaml")
         return deleted
-

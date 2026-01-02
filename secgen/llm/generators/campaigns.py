@@ -88,9 +88,7 @@ class CampaignNarrativeGenerator(BaseArtifactGenerator):
             # Count phases
             phase_count = len(campaign.get("phases", []))
 
-            logger.info(
-                f"Generated campaign '{campaign.get('name')}' with {phase_count} phases"
-            )
+            logger.info(f"Generated campaign '{campaign.get('name')}' with {phase_count} phases")
 
             return {"campaign": campaign}
 
@@ -240,17 +238,21 @@ class CampaignNarrativeGenerator(BaseArtifactGenerator):
         # Also get from infrastructure
         infra = self.get_infrastructure(threat_actor, target_sector, objective)
         for domain in infra.get("c2_domains", []):
-            indicators.append({
-                "type": "domain",
-                "value": domain,
-                "phase": "infrastructure",
-            })
+            indicators.append(
+                {
+                    "type": "domain",
+                    "value": domain,
+                    "phase": "infrastructure",
+                }
+            )
         for ip in infra.get("c2_ips", []):
-            indicators.append({
-                "type": "ip",
-                "value": ip,
-                "phase": "infrastructure",
-            })
+            indicators.append(
+                {
+                    "type": "ip",
+                    "value": ip,
+                    "phase": "infrastructure",
+                }
+            )
 
         return indicators
 
@@ -277,12 +279,14 @@ class CampaignNarrativeGenerator(BaseArtifactGenerator):
         for phase in phases:
             process_chain = phase.get("process_chain", [])
             if process_chain:
-                chains.append({
-                    "phase": phase.get("name", "unknown"),
-                    "day": phase.get("day"),
-                    "ttp": phase.get("ttp"),
-                    "processes": process_chain,
-                })
+                chains.append(
+                    {
+                        "phase": phase.get("name", "unknown"),
+                        "day": phase.get("day"),
+                        "ttp": phase.get("ttp"),
+                        "processes": process_chain,
+                    }
+                )
 
         return chains
 
@@ -331,15 +335,17 @@ class CampaignNarrativeGenerator(BaseArtifactGenerator):
                 "extension": self._get_extension(last_proc.get("name", ".exe")),
             }
 
-            scenarios.append({
-                "name": f"{campaign.get('name', 'Campaign')} - {phase.get('name', 'Phase')}",
-                "description": phase.get("description", phase.get("story", "")),
-                "severity": severity,
-                "processes": process_chain,
-                "malware_file": malware_file,
-                "ttp": phase.get("ttp"),
-                "day": phase.get("day"),
-            })
+            scenarios.append(
+                {
+                    "name": f"{campaign.get('name', 'Campaign')} - {phase.get('name', 'Phase')}",
+                    "description": phase.get("description", phase.get("story", "")),
+                    "severity": severity,
+                    "processes": process_chain,
+                    "malware_file": malware_file,
+                    "ttp": phase.get("ttp"),
+                    "day": phase.get("day"),
+                }
+            )
 
         return scenarios
 
@@ -368,4 +374,3 @@ class CampaignNarrativeGenerator(BaseArtifactGenerator):
     def get_objective_description(objective: str) -> str:
         """Get description for an objective."""
         return CAMPAIGN_OBJECTIVES.get(objective, objective)
-

@@ -72,8 +72,7 @@ class EntityProfileGenerator(BaseArtifactGenerator):
             data["role_count_generated"] = len(data.get("personas", []))
 
             logger.info(
-                f"Generated {data['role_count_generated']} personas "
-                f"for {industry} industry"
+                f"Generated {data['role_count_generated']} personas " f"for {industry} industry"
             )
             return data
 
@@ -135,8 +134,7 @@ class EntityProfileGenerator(BaseArtifactGenerator):
 
         if privilege_level:
             filtered = [
-                p for p in personas
-                if p.get("privilege_level", "standard") == privilege_level
+                p for p in personas if p.get("privilege_level", "standard") == privilege_level
             ]
             if filtered:
                 personas = filtered
@@ -223,18 +221,49 @@ class EntityProfileGenerator(BaseArtifactGenerator):
         """
         # Generate names if not provided
         if not first_name:
-            first_name = random.choice([
-                "Alice", "Bob", "Charlie", "Diana", "Eve", "Frank",
-                "Grace", "Henry", "Ivy", "Jack", "Kate", "Liam",
-                "Maya", "Noah", "Olivia", "Paul", "Quinn", "Rose",
-            ])
+            first_name = random.choice(
+                [
+                    "Alice",
+                    "Bob",
+                    "Charlie",
+                    "Diana",
+                    "Eve",
+                    "Frank",
+                    "Grace",
+                    "Henry",
+                    "Ivy",
+                    "Jack",
+                    "Kate",
+                    "Liam",
+                    "Maya",
+                    "Noah",
+                    "Olivia",
+                    "Paul",
+                    "Quinn",
+                    "Rose",
+                ]
+            )
 
         if not last_name:
-            last_name = random.choice([
-                "Smith", "Johnson", "Williams", "Brown", "Jones",
-                "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
-                "Anderson", "Taylor", "Thomas", "Moore", "Jackson",
-            ])
+            last_name = random.choice(
+                [
+                    "Smith",
+                    "Johnson",
+                    "Williams",
+                    "Brown",
+                    "Jones",
+                    "Garcia",
+                    "Miller",
+                    "Davis",
+                    "Rodriguez",
+                    "Martinez",
+                    "Anderson",
+                    "Taylor",
+                    "Thomas",
+                    "Moore",
+                    "Jackson",
+                ]
+            )
 
         # Generate username from pattern
         pattern = persona.get("username_pattern", "{firstname}.{lastname}")
@@ -296,4 +325,3 @@ class EntityProfileGenerator(BaseArtifactGenerator):
                 results[industry] = {"error": str(e)}
 
         return results
-

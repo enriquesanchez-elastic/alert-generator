@@ -70,16 +70,16 @@ def _describe_event_type(name: str) -> None:
     print("-" * 70)
     print(f"\n# Generate 50 {name} events")
     print(f"secgen generate {name} --count 50")
-    print(f"\n# Generate with World state correlation")
+    print("\n# Generate with World state correlation")
     print(f"secgen generate {name} --count 50 --use-world")
-    print(f"\n# Generate and index to Elasticsearch")
+    print("\n# Generate and index to Elasticsearch")
     print(f"secgen generate {name} --count 100 --index")
 
     if metadata.example_params:
         params_str = " ".join(
             f"--param {k}={v}" for k, v in list(metadata.example_params.items())[:2]
         )
-        print(f"\n# Generate with parameters")
+        print("\n# Generate with parameters")
         print(f"secgen generate {name} --count 50 {params_str}")
 
     print("\n" + "=" * 70)
@@ -138,9 +138,9 @@ def _describe_attack_pattern(name: str) -> None:
     print("-" * 70)
     print(f"\n# Execute {name} attack pattern")
     print(f"secgen attack {name} --index")
-    print(f"\n# Execute multiple iterations")
+    print("\n# Execute multiple iterations")
     print(f"secgen attack {name} --count 3 --index")
-    print(f"\n# Use with World state")
+    print("\n# Use with World state")
     print(f"secgen attack {name} --world-file qa-world.json --index")
 
     # Show MITRE ATT&CK reference
@@ -153,4 +153,3 @@ def _describe_attack_pattern(name: str) -> None:
             print(f"  {ttp}: https://attack.mitre.org/techniques/{technique_id}/")
 
     print("\n" + "=" * 70)
-

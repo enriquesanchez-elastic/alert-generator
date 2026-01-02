@@ -34,12 +34,14 @@ class Preset:
         """Create Preset from dictionary."""
         steps = []
         for step_data in data.get("steps", []):
-            steps.append(PresetStep(
-                type=step_data.get("type", "event"),
-                name=step_data.get("name", ""),
-                count=step_data.get("count", 10),
-                params=step_data.get("params", {}),
-            ))
+            steps.append(
+                PresetStep(
+                    type=step_data.get("type", "event"),
+                    name=step_data.get("name", ""),
+                    count=step_data.get("count", 10),
+                    params=step_data.get("params", {}),
+                )
+            )
 
         return cls(
             name=data.get("name", "unnamed"),
@@ -53,7 +55,7 @@ class Preset:
     @classmethod
     def from_yaml(cls, yaml_path: str) -> "Preset":
         """Load Preset from YAML file."""
-        with open(yaml_path, "r") as f:
+        with open(yaml_path) as f:
             data = yaml.safe_load(f)
         return cls.from_dict(data)
 
@@ -73,7 +75,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
             {"type": "event", "name": "registry", "count": 150},
             {"type": "event", "name": "endpoint-network", "count": 200},
             # Network events
-            {"type": "event", "name": "network-flow", "count": 300, "params": {"geo_diverse": True}},
+            {
+                "type": "event",
+                "name": "network-flow",
+                "count": 300,
+                "params": {"geo_diverse": True},
+            },
             {"type": "event", "name": "dns", "count": 200},
             {"type": "event", "name": "http", "count": 100},
             # Identity events
@@ -150,7 +157,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
         "world": {"hosts": 20, "users": 40},
         "time_spread_hours": 24,
         "steps": [
-            {"type": "event", "name": "network-flow", "count": 500, "params": {"geo_diverse": True}},
+            {
+                "type": "event",
+                "name": "network-flow",
+                "count": 500,
+                "params": {"geo_diverse": True},
+            },
             {"type": "event", "name": "dns", "count": 300},
             {"type": "event", "name": "http", "count": 200},
             {"type": "event", "name": "tls", "count": 200},
@@ -196,7 +208,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
             {"type": "event", "name": "registry", "count": 50},
             {"type": "event", "name": "endpoint-network", "count": 100},
             # Network visibility
-            {"type": "event", "name": "network-flow", "count": 150, "params": {"geo_diverse": True}},
+            {
+                "type": "event",
+                "name": "network-flow",
+                "count": 150,
+                "params": {"geo_diverse": True},
+            },
             {"type": "event", "name": "dns", "count": 100},
             # Identity
             {"type": "event", "name": "authentication", "count": 100},
@@ -271,7 +288,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
             {"type": "event", "name": "authentication", "count": 150},
             {"type": "event", "name": "file", "count": 100},
             # Suspicious after-hours access
-            {"type": "event", "name": "authentication", "count": 30, "params": {"is_suspicious": True}},
+            {
+                "type": "event",
+                "name": "authentication",
+                "count": 30,
+                "params": {"is_suspicious": True},
+            },
             # Unusual data access patterns
             {"type": "event", "name": "file", "count": 150, "params": {"is_sensitive": True}},
             # Data staging and compression
@@ -346,7 +368,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
         "time_spread_hours": 24,
         "steps": [
             # Heavy network flow data with geo diversity
-            {"type": "event", "name": "network-flow", "count": 1000, "params": {"geo_diverse": True}},
+            {
+                "type": "event",
+                "name": "network-flow",
+                "count": 1000,
+                "params": {"geo_diverse": True},
+            },
             {"type": "event", "name": "dns", "count": 500},
             {"type": "event", "name": "http", "count": 300},
             {"type": "event", "name": "tls", "count": 300},
@@ -498,7 +525,12 @@ BUILTIN_PRESETS: dict[str, dict[str, Any]] = {
             # AWS CSPM findings
             {"type": "event", "name": "cspm", "count": 300, "params": {"cloud_provider": "aws"}},
             # Network visibility for AWS
-            {"type": "event", "name": "network-flow", "count": 200, "params": {"geo_diverse": True}},
+            {
+                "type": "event",
+                "name": "network-flow",
+                "count": 200,
+                "params": {"geo_diverse": True},
+            },
             {"type": "event", "name": "dns", "count": 100},
         ],
     },
@@ -595,6 +627,7 @@ def load_preset(name_or_path: str) -> Preset:
     if os.path.exists(f"{name_or_path}.yaml"):
         return Preset.from_yaml(f"{name_or_path}.yaml")
 
-    raise ValueError(f"Preset '{name_or_path}' not found. "
-                     f"Available presets: {', '.join(BUILTIN_PRESETS.keys())}")
-
+    raise ValueError(
+        f"Preset '{name_or_path}' not found. "
+        f"Available presets: {', '.join(BUILTIN_PRESETS.keys())}"
+    )

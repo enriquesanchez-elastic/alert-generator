@@ -175,4 +175,3 @@ def get_feature_test(name: str) -> FeatureTest | None:
         FeatureTest or None if not found
     """
     return FEATURE_TESTS.get(name)
-

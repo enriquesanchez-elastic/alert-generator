@@ -5,9 +5,10 @@ enabling discovery and documentation of available event types and attack pattern
 via the CLI.
 """
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, TypeVar
+from typing import Any, TypeVar
 
 # Type variable for decorated classes/functions
 T = TypeVar("T")
@@ -145,14 +146,10 @@ class GeneratorRegistry:
             categories.add(atk.category)
         return sorted(categories, key=lambda c: c.value)
 
-    def get_generators_by_category(
-        self, category: GeneratorCategory
-    ) -> dict[str, list[str]]:
+    def get_generators_by_category(self, category: GeneratorCategory) -> dict[str, list[str]]:
         """Get all generators for a category, grouped by type."""
         return {
-            "event_types": [
-                t.name for t in self._event_types.values() if t.category == category
-            ],
+            "event_types": [t.name for t in self._event_types.values() if t.category == category],
             "attack_patterns": [
                 p.name for p in self._attack_patterns.values() if p.category == category
             ],
@@ -302,5 +299,4 @@ def finalize_attack_patterns(cls: type) -> None:
             # Update with correct class reference
             metadata.generator_class = cls
             _registry.register_attack_pattern(metadata)
-
 

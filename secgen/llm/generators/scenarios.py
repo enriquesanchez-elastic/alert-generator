@@ -1,7 +1,7 @@
 """Scenario variation generator using LLM."""
 
 import logging
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from secgen.llm.generators.base import BaseArtifactGenerator
 from secgen.llm.prompts import get_scenario_variation_prompt
@@ -109,8 +109,7 @@ class ScenarioVariationGenerator(BaseArtifactGenerator):
             data["variation_count_generated"] = len(data.get("scenarios", []))
 
             logger.info(
-                f"Generated {data['variation_count_generated']} variations "
-                f"of '{base_name}'"
+                f"Generated {data['variation_count_generated']} variations " f"of '{base_name}'"
             )
             return data
 
@@ -259,4 +258,3 @@ class ScenarioVariationGenerator(BaseArtifactGenerator):
                 logger.error(f"Failed to generate variations for {base_name}: {e}")
 
         return all_variations
-

@@ -3,7 +3,6 @@
 import random
 from typing import Any
 
-
 # Comprehensive geo database for realistic location generation
 GEO_DATABASE = [
     # United States
@@ -161,7 +160,8 @@ SUSPICIOUS_COUNTRIES = ["RU", "CN", "KP", "IR", "BY"]
 
 # Corporate HQ locations
 CORPORATE_LOCATIONS = [
-    loc for loc in GEO_DATABASE
+    loc
+    for loc in GEO_DATABASE
     if loc["country_iso_code"] in ["US", "GB", "DE", "NL", "JP", "SG", "AU", "FR"]
 ]
 
@@ -179,8 +179,7 @@ def get_random_geo(is_malicious: bool = False) -> dict[str, Any]:
     if is_malicious and random.random() < 0.7:
         # 70% chance of suspicious location for malicious events
         suspicious_locs = [
-            loc for loc in GEO_DATABASE
-            if loc["country_iso_code"] in SUSPICIOUS_COUNTRIES
+            loc for loc in GEO_DATABASE if loc["country_iso_code"] in SUSPICIOUS_COUNTRIES
         ]
         geo = random.choice(suspicious_locs) if suspicious_locs else random.choice(GEO_DATABASE)
     else:
@@ -215,7 +214,9 @@ def get_impossible_travel_pair() -> tuple[dict[str, Any], dict[str, Any]]:
     # Pick locations from different continents
     us_locations = [loc for loc in GEO_DATABASE if loc["country_iso_code"] == "US"]
     asia_locations = [loc for loc in GEO_DATABASE if loc["country_iso_code"] in ["JP", "SG", "AU"]]
-    europe_locations = [loc for loc in GEO_DATABASE if loc["country_iso_code"] in ["GB", "DE", "NL", "FR"]]
+    europe_locations = [
+        loc for loc in GEO_DATABASE if loc["country_iso_code"] in ["GB", "DE", "NL", "FR"]
+    ]
 
     # Randomly select two locations from different continents
     first_continent = random.choice([us_locations, europe_locations, asia_locations])
@@ -255,8 +256,10 @@ def calculate_distance_km(geo1: dict[str, Any], geo2: dict[str, Any]) -> float:
     delta_lat = math.radians(lat2 - lat1)
     delta_lon = math.radians(lon2 - lon1)
 
-    a = (math.sin(delta_lat / 2) ** 2 +
-         math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2)
+    a = (
+        math.sin(delta_lat / 2) ** 2
+        + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(delta_lon / 2) ** 2
+    )
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
     return R * c
@@ -289,5 +292,4 @@ def get_as_info(geo_data: dict[str, Any]) -> dict[str, Any]:
             "name": geo_data.get("as_org", "Unknown ISP"),
         },
     }
-
 

@@ -64,12 +64,12 @@ class AlertOrchestrator:
         self.world = world
 
         # LLM components (initialized lazily)
-        self._llm_client: "GeminiClient | None" = None
-        self._artifact_cache: "ArtifactCache | None" = None
-        self._command_generator: "CommandLibraryGenerator | None" = None
-        self._scenario_generator: "ScenarioVariationGenerator | None" = None
-        self._profile_generator: "EntityProfileGenerator | None" = None
-        self._campaign_narrative_generator: "CampaignNarrativeGenerator | None" = None
+        self._llm_client: GeminiClient | None = None
+        self._artifact_cache: ArtifactCache | None = None
+        self._command_generator: CommandLibraryGenerator | None = None
+        self._scenario_generator: ScenarioVariationGenerator | None = None
+        self._profile_generator: EntityProfileGenerator | None = None
+        self._campaign_narrative_generator: CampaignNarrativeGenerator | None = None
         self._llm_scenarios: list[Scenario] = []
 
     def _init_llm_components(self) -> bool:
@@ -354,7 +354,9 @@ class AlertOrchestrator:
                     target_os=target_os,
                 )
                 results["campaign"] = bool(data.get("campaign"))
-                logger.info(f"Campaign narrative ready: {data.get('campaign', {}).get('name', 'N/A')}")
+                logger.info(
+                    f"Campaign narrative ready: {data.get('campaign', {}).get('name', 'N/A')}"
+                )
             except Exception as e:
                 logger.warning(f"Failed to generate campaign: {e}")
 
@@ -423,9 +425,7 @@ class AlertOrchestrator:
                     base_scenarios=self.scenarios,
                     variations_per_base=3,
                 )
-                logger.info(
-                    f"Using LLM artifacts: {len(self._llm_scenarios)} scenario variations"
-                )
+                logger.info(f"Using LLM artifacts: {len(self._llm_scenarios)} scenario variations")
 
         # Initialize or use existing World state
         world = self.world
@@ -488,7 +488,9 @@ class AlertOrchestrator:
 
                 # Use combined scenarios when LLM artifacts are enabled
                 available_scenarios = self.get_all_scenarios(include_llm=use_llm_artifacts)
-                scenario = self.campaign_generator.select_scenario_for_phase(phase, available_scenarios)
+                scenario = self.campaign_generator.select_scenario_for_phase(
+                    phase, available_scenarios
+                )
 
                 # Get timestamp offset based on phase and attack speed
                 min_offset, max_offset = get_campaign_phase_offset(phase, attack_speed)

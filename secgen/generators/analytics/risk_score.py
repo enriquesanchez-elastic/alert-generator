@@ -217,14 +217,16 @@ class RiskScoreGenerator:
                 risk_input = random.choice(available_inputs)
                 contribution = min(remaining_score, risk_input["weight"])
 
-                inputs.append({
-                    "id": self.randomizer.generate_uuid()[:8],
-                    "index": f".alerts-security.alerts-default",
-                    "category": category,
-                    "description": risk_input["name"],
-                    "risk_score": contribution,
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-                })
+                inputs.append(
+                    {
+                        "id": self.randomizer.generate_uuid()[:8],
+                        "index": ".alerts-security.alerts-default",
+                        "category": category,
+                        "description": risk_input["name"],
+                        "risk_score": contribution,
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
+                    }
+                )
 
                 remaining_score -= contribution
 
@@ -290,5 +292,4 @@ class RiskScoreGenerator:
             risk_level=risk_level,
             entity_type=entity_type,
         )
-
 

@@ -70,7 +70,7 @@ def _list_presets() -> None:
 
     uncategorized = set(presets.keys()) - all_categorized
     if uncategorized:
-        print(f"\n  Other")
+        print("\n  Other")
         print("  " + "-" * 40)
         for name in sorted(uncategorized):
             desc = presets[name][:45] + "..." if len(presets[name]) > 45 else presets[name]
@@ -316,9 +316,7 @@ def _generate_events(
                     events.append(event)
             except (TypeError, AttributeError) as e:
                 # Some generators have different signatures or missing methods
-                logger.warning(
-                    f"Skipping generator {type(generator).__name__}: incompatible ({e})"
-                )
+                logger.warning(f"Skipping generator {type(generator).__name__}: incompatible ({e})")
                 break  # Don't retry for this generator
     else:
         logger.warning(
@@ -340,7 +338,6 @@ def _execute_attack(
     settings,
 ) -> list[dict[str, Any]]:
     """Execute an attack pattern."""
-    import random
 
     events: list[dict[str, Any]] = []
 
@@ -393,7 +390,9 @@ def _build_attack_params(metadata, host, user, world) -> dict[str, Any]:
     if "target_user" in metadata.required_params and user:
         params["target_user"] = user
     if "source_ip" in metadata.required_params:
-        params["source_ip"] = f"{random.randint(1, 223)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
+        params["source_ip"] = (
+            f"{random.randint(1, 223)}.{random.randint(0, 255)}.{random.randint(0, 255)}.{random.randint(1, 254)}"
+        )
     if "target_ip" in metadata.required_params and world:
         target_host = world.get_random_host()
         if target_host and target_host.ip:
@@ -457,4 +456,3 @@ def _group_events_by_type(events: list[dict[str, Any]]) -> dict[str, list[dict[s
         grouped[event_type].append(event)
 
     return grouped
-
