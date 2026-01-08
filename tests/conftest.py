@@ -5,10 +5,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from alerts_generator.config.settings import Settings
-from alerts_generator.indexers.base import BaseIndexer
-from alerts_generator.models.campaign import Campaign
-from alerts_generator.models.scenario import MalwareFile, ProcessInfo, Scenario
+from secgen.config.settings import Settings
+from secgen.indexers.base import BaseIndexer
+from secgen.models.campaign import Campaign
+from secgen.models.scenario import MalwareFile, ProcessInfo, Scenario
 
 
 @pytest.fixture

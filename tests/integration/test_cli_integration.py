@@ -4,8 +4,8 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from alerts_generator.cli import load_scenarios, main
-from alerts_generator.core import AlertOrchestrator
+from secgen.cli import load_scenarios, main
+from secgen.core import AlertOrchestrator
 
 
 def test_cli_parses_arguments_correctly(capsys):
@@ -21,7 +21,7 @@ def test_scenario_loading_from_file_works():
     """Test that scenario loading from file works."""
     import tempfile
 
-    from alerts_generator.config.loader import load_scenarios_from_file
+    from secgen.config.loader import load_scenarios_from_file
 
     yaml_content = """
 scenarios:
@@ -98,7 +98,7 @@ def test_delete_all_command_works(settings):
     """Test that delete-all command works (with mocks)."""
     from unittest.mock import MagicMock
 
-    from alerts_generator.indexers.elasticsearch import ElasticsearchIndexer
+    from secgen.indexers.elasticsearch import ElasticsearchIndexer
 
     indexer = ElasticsearchIndexer(settings)
 

@@ -4,7 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import requests
 
-from alerts_generator.indexers.elasticsearch import ElasticsearchIndexer
+from secgen.indexers.elasticsearch import ElasticsearchIndexer
 
 
 def test_index_alert_successful_indexing(settings):

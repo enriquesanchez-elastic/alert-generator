@@ -1,6 +1,6 @@
 """Tests for AlertData model."""
 
-from alerts_generator.models.alert import AlertData
+from secgen.models.alert import AlertData
 
 
 def test_alert_data_initialization_with_all_fields(sample_scenario):

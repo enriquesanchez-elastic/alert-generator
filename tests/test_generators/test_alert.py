@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta, timezone
 
-from alerts_generator.generators.alert import AlertGenerator
+from secgen.generators.alert import AlertGenerator
 
 
 def test_generate_returns_tuple_with_alert_dict_and_entity_ids(sample_scenario, settings):

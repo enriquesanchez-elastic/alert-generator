@@ -3,7 +3,7 @@
 import re
 import uuid
 
-from alerts_generator.generators.randomizers import RandomDataGenerator
+from secgen.generators.randomizers import RandomDataGenerator
 
 
 def test_generate_uuid_returns_valid_uuid_format():

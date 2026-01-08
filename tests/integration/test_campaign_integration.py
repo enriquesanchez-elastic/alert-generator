@@ -1,6 +1,6 @@
 """Integration tests for campaign generation."""
 
-from alerts_generator.core import AlertOrchestrator
+from secgen.core import AlertOrchestrator
 
 
 def test_full_campaign_generation_with_multiple_hosts(settings, mock_indexer, multiple_scenarios):

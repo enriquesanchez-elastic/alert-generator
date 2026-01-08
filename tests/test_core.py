@@ -4,7 +4,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from alerts_generator.core import AlertOrchestrator
+from secgen.core import AlertOrchestrator
 
 
 def test_initialization_with_settings_indexer_scenarios(settings, mock_indexer, multiple_scenarios):
