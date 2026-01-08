@@ -1,6 +1,6 @@
 # SecGen Advanced Features Documentation
 
-This document covers the advanced features for generating realistic, correlated security data including Beat events, MITRE ATT&CK threat mapping, Attack Discoveries, and Security Cases.
+This document covers the advanced features for generating realistic, correlated security data including Beat events, MITRE ATT&CK threat mapping, Attack Discoveries, Security Cases, and AI-enhanced generation.
 
 ## Table of Contents
 
@@ -13,8 +13,9 @@ This document covers the advanced features for generating realistic, correlated 
 4. [Attack Discovery](#attack-discovery)
 5. [Security Cases](#security-cases)
 6. [Correlated Attack Chains](#correlated-attack-chains)
-7. [CLI Commands](#cli-commands)
-8. [Python API Examples](#python-api-examples)
+7. [AI-Enhanced Generation](#ai-enhanced-generation)
+8. [CLI Commands](#cli-commands)
+9. [Python API Examples](#python-api-examples)
 
 ---
 
@@ -638,6 +639,118 @@ python -m secgen correlated-attack brute-force --events 50 --no-case --index
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## AI-Enhanced Generation
+
+SecGen includes optional AI-powered features that use Google Gemini to generate realistic, context-aware security data artifacts.
+
+### Features Overview
+
+| Generator | Purpose | Output |
+|-----------|---------|--------|
+| **CommandLibraryGenerator** | Realistic attack commands | Commands organized by MITRE ATT&CK tactic |
+| **CampaignNarrativeGenerator** | Multi-day attack stories | Complete campaign narratives with phases |
+| **EntityProfileGenerator** | User behavior profiles | Industry-specific personas |
+| **ScenarioVariationGenerator** | Attack scenario variants | Multiple variations of base scenarios |
+
+### Quick Setup
+
+```bash
+# Install google-genai
+pip install google-genai
+
+# Set API key
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+### CLI Usage
+
+```bash
+# Generate command library for lateral movement
+secgen llm commands --tactic lateral_movement --actor APT29
+
+# Generate campaign narrative
+secgen llm campaign --actor APT29 --target technology --days 14
+
+# Generate entity profiles for healthcare
+secgen llm profiles --industry healthcare --roles 15
+
+# View cache statistics
+secgen llm cache stats
+```
+
+### Example: Generate Attack Commands (Python API)
+
+```python
+from secgen.config.settings import get_settings
+from secgen.llm.client import GeminiClient
+from secgen.llm.cache import ArtifactCache
+from secgen.llm.generators.commands import CommandLibraryGenerator
+
+settings = get_settings()
+client = GeminiClient(api_key=settings.gemini_api_key)
+cache = ArtifactCache(base_dir=settings.llm_artifacts_path)
+
+cmd_gen = CommandLibraryGenerator(client=client, cache=cache)
+
+# Generate commands styled after APT29 for lateral movement
+data = cmd_gen.generate(
+    tactic="lateral_movement",
+    count=30,
+    threat_actor_style="APT29",
+    os_family="windows",
+)
+
+# Get a random command
+cmd = cmd_gen.get_random_command(tactic="execution", category="powershell")
+```
+
+### Example: Generate Campaign Narrative
+
+```python
+from secgen.llm.generators.campaigns import CampaignNarrativeGenerator
+
+campaign_gen = CampaignNarrativeGenerator(client=client, cache=cache)
+
+# Generate a 14-day APT campaign
+data = campaign_gen.generate(
+    threat_actor="APT29",
+    target_sector="technology",
+    dwell_time_days=14,
+    objective="data_theft",
+)
+
+# Get IOCs from campaign
+iocs = campaign_gen.get_indicators(threat_actor="APT29", target_sector="technology")
+
+# Convert to executable scenarios
+scenarios = campaign_gen.convert_to_scenarios(threat_actor="APT29", target_sector="technology")
+```
+
+### Available Threat Actors
+
+- `APT29` - Russian state-sponsored, stealthy
+- `APT28` - Russian military intelligence, aggressive
+- `APT41` - Chinese state-sponsored with criminal sideline
+- `FIN7` - Financial crime group
+- `Lazarus` - North Korean state-sponsored
+- `REvil`, `Conti` - Ransomware groups
+- `generic_apt`, `generic_criminal` - Generic profiles
+
+### Available Industries (for Entity Profiles)
+
+- Healthcare (HIPAA, PHI access)
+- Finance (PCI-DSS, trading systems)
+- Technology (CI/CD, cloud infrastructure)
+- Retail (POS systems)
+- Manufacturing (OT/ICS systems)
+- Government (classified information)
+- Education (research data)
+- Legal (client privilege)
+
+> 📖 **For complete AI documentation**, see [AI_ENHANCED_GENERATION.md](AI_ENHANCED_GENERATION.md)
 
 ---
 

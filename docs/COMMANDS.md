@@ -316,13 +316,122 @@ python -m secgen sample-scenario --output scenario.yaml
 
 ## Environment Variables
 
+### Elasticsearch Configuration
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ELASTIC_URL` | Elasticsearch URL | `localhost:9200` |
 | `ELASTIC_USERNAME` | Elasticsearch username | `elastic` |
 | `ELASTIC_PASSWORD` | Elasticsearch password | - |
 | `KIBANA_URL` | Kibana URL for links | `http://localhost:5601` |
-| `LOG_LEVEL` | Logging level | `INFO` |
+| `KIBANA_BASE_PATH` | Kibana base path (if any) | - |
+| `KIBANA_SPACE` | Kibana space ID | `default` |
+| `ALERTS_INDEX` | Alerts index pattern | `.alerts-security.alerts-default` |
+
+### Logging Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `LOG_LEVEL` | Logging level (DEBUG, INFO, WARNING, ERROR) | `INFO` |
+| `LOG_JSON` | Enable JSON formatted logging | `false` |
+
+### AI/LLM Configuration (Optional)
+
+These settings enable AI-enhanced generation features. See [AI_ENHANCED_GENERATION.md](AI_ENHANCED_GENERATION.md) for details.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `GEMINI_API_KEY` | Google Gemini API key (required for AI features) | - |
+| `GEMINI_MODEL` | Gemini model to use | `gemini-3-pro-preview` |
+| `LLM_ARTIFACTS_DIR` | Directory for cached AI artifacts | `~/.secgen/llm_artifacts` |
+| `LLM_CACHE_ENABLED` | Enable artifact caching | `true` |
+
+---
+
+## LLM Commands
+
+Generate AI-powered artifacts using Google Gemini. Requires `GEMINI_API_KEY` to be set.
+
+### `llm commands` - Generate Command Libraries
+
+```bash
+# Generate execution commands
+secgen llm commands --tactic execution --count 30 --actor APT29 --os windows
+
+# List available tactics
+secgen llm commands --list-tactics
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--tactic` | `execution` | MITRE ATT&CK tactic |
+| `--count` | `30` | Number of commands |
+| `--actor` | `generic_apt` | Threat actor style |
+| `--os` | `windows` | Target OS |
+| `--force` | - | Force regeneration |
+
+### `llm scenarios` - Generate Scenario Variations
+
+```bash
+# Generate ransomware variations
+secgen llm scenarios --base "Ransomware" --variations 5
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--base` | `Ransomware` | Base scenario name |
+| `--variations` | `5` | Number of variations |
+| `--os` | `windows` | Target OS |
+
+### `llm profiles` - Generate Entity Profiles
+
+```bash
+# Generate healthcare profiles
+secgen llm profiles --industry healthcare --roles 15
+
+# List industries
+secgen llm profiles --list-industries
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--industry` | `technology` | Industry vertical |
+| `--roles` | `10` | Number of roles |
+| `--org-size` | `medium` | Organization size |
+
+### `llm campaign` - Generate Campaign Narratives
+
+```bash
+# Generate APT campaign
+secgen llm campaign --actor APT29 --target technology --days 14
+
+# List threat actors
+secgen llm campaign --list-actors
+```
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `--actor` | `APT29` | Threat actor |
+| `--target` | `technology` | Target sector |
+| `--days` | `14` | Campaign duration |
+| `--objective` | `data_theft` | Campaign objective |
+
+### `llm cache` - Manage Artifact Cache
+
+```bash
+# View cache statistics
+secgen llm cache stats
+
+# List cached artifacts
+secgen llm cache list
+secgen llm cache list --type commands
+
+# Clear cache
+secgen llm cache clear
+secgen llm cache clear --type commands
+```
+
+> 📖 **For complete AI documentation**, see [AI_ENHANCED_GENERATION.md](AI_ENHANCED_GENERATION.md)
 
 
 

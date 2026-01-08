@@ -16,8 +16,11 @@ A comprehensive, modular tool for generating realistic, ECS-compliant security d
 - **Network Security**: DNS, HTTP, TLS with JA3 fingerprints, and geo-enriched network flows
 - **Threat Intelligence**: Coordinated IOC generation for indicator matching rules
 - **ECS Compliance**: Full Elastic Common Schema compliance for all event types
+- **AI-Enhanced Generation**: Optional LLM-powered content using Google Gemini
 
 > 📖 **NEW!** For documentation on Beat generators, Attack Discovery, Cases, and MITRE integration, see [docs/FEATURES.md](docs/FEATURES.md)
+>
+> 🤖 **AI Features**: For AI-enhanced generation (commands, campaigns, profiles), see [docs/AI_ENHANCED_GENERATION.md](docs/AI_ENHANCED_GENERATION.md)
 
 ## Installation
 
@@ -349,6 +352,86 @@ secgen/mcp/
 ```
 
 > 📖 **For detailed MCP documentation**, see [docs/MCP_INTEGRATION.md](docs/MCP_INTEGRATION.md)
+
+## AI-Enhanced Generation (Optional)
+
+SecGen includes optional AI-powered features that use Google Gemini to generate realistic security data artifacts.
+
+### Quick Setup
+
+```bash
+# Install google-genai
+pip install google-genai
+
+# Set API key
+export GEMINI_API_KEY="your-api-key-here"
+```
+
+### CLI Commands
+
+```bash
+# Generate attack commands for lateral movement
+secgen llm commands --tactic lateral_movement --actor APT29 --os windows
+
+# Generate a 14-day APT campaign narrative
+secgen llm campaign --actor APT29 --target technology --days 14
+
+# Generate user profiles for healthcare industry
+secgen llm profiles --industry healthcare --roles 15
+
+# View cache statistics
+secgen llm cache stats
+```
+
+### AI Generators
+
+| Generator | Purpose | Example Use |
+|-----------|---------|-------------|
+| **CommandLibraryGenerator** | Attack commands by MITRE tactic | Realistic PowerShell, WMI, lateral movement commands |
+| **CampaignNarrativeGenerator** | Multi-day attack campaigns | APT29-style 14-day intrusion with phases and IOCs |
+| **EntityProfileGenerator** | User behavior profiles | Healthcare, finance, technology industry personas |
+| **ScenarioVariationGenerator** | Attack scenario variants | Generate 5 variations of a ransomware scenario |
+
+### Example: AI-Generated Commands
+
+```python
+from secgen.config.settings import get_settings
+from secgen.llm.client import GeminiClient
+from secgen.llm.cache import ArtifactCache
+from secgen.llm.generators.commands import CommandLibraryGenerator
+
+settings = get_settings()
+client = GeminiClient(api_key=settings.gemini_api_key)
+cache = ArtifactCache(base_dir=settings.llm_artifacts_path)
+
+cmd_gen = CommandLibraryGenerator(client=client, cache=cache)
+
+# Generate APT29-style lateral movement commands
+data = cmd_gen.generate(
+    tactic="lateral_movement",
+    count=30,
+    threat_actor_style="APT29",
+    os_family="windows",
+)
+```
+
+### Available Threat Actor Styles
+
+- `APT29`, `APT28`, `APT41` - State-sponsored groups
+- `FIN7`, `Lazarus` - Financially motivated
+- `REvil`, `Conti` - Ransomware groups
+- `generic_apt`, `generic_criminal` - Generic profiles
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `GEMINI_API_KEY` | (required) | Google Gemini API key |
+| `GEMINI_MODEL` | `gemini-3-pro-preview` | Model to use |
+| `LLM_ARTIFACTS_DIR` | `~/.secgen/llm_artifacts` | Cache directory |
+| `LLM_CACHE_ENABLED` | `true` | Enable artifact caching |
+
+> 📖 **For complete AI documentation**, see [docs/AI_ENHANCED_GENERATION.md](docs/AI_ENHANCED_GENERATION.md)
 
 ### Start MCP Server Manually
 
