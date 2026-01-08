@@ -49,7 +49,7 @@ class ProcessEventGenerator:
         timestamp_offset: int = 0,
         host: Optional["Host"] = None,
         user: Optional["User"] = None,
-    ) -> list[dict[str, Any]]:
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """
         Generate process events for a variable-depth process hierarchy.
 
@@ -63,7 +63,9 @@ class ProcessEventGenerator:
             user: Optional User entity for proper correlation
 
         Returns:
-            List of process event dictionaries
+            Tuple of (List of process event dictionaries, List of entity IDs used)
+            The entity_ids should be passed to AlertGenerator.generate() for
+            proper Session View and Analyzer correlation.
         """
         now = (datetime.now(timezone.utc) - timedelta(minutes=timestamp_offset)).isoformat()
         base_timestamp_ms = int(
@@ -194,7 +196,7 @@ class ProcessEventGenerator:
 
             events.append(event)
 
-        return events
+        return events, entity_ids
 
     def _create_process_leader_info(
         self,
@@ -274,7 +276,7 @@ class ProcessEventGenerator:
         host: "Host",
         user: "User",
         timestamp_offset: int = 0,
-    ) -> list[dict[str, Any]]:
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """
         Generate process events using World state for proper correlation.
 
@@ -289,7 +291,9 @@ class ProcessEventGenerator:
             timestamp_offset: Minutes to offset timestamps
 
         Returns:
-            List of process event dictionaries with correlated entity_ids
+            Tuple of (List of process event dictionaries, List of entity IDs)
+            The entity_ids should be passed to AlertGenerator.generate() for
+            proper Session View and Analyzer correlation.
         """
         # Convert scenario processes to process info dicts
         process_infos = [

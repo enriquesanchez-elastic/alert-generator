@@ -541,20 +541,28 @@ class AlertOrchestrator:
             # Generate unique agent ID (for legacy mode)
             agent_id = host.agent_id if host else self.randomizer.generate_uuid()
 
-            # Generate the detection rule alert
-            alert, entity_ids = self.alert_generator.generate(
-                scenario, hostname, agent_id, timestamp_offset, campaign, host, user
-            )
-
-            # Generate process events
+            # IMPORTANT: Generate process events FIRST to get entity_ids.
+            # These entity_ids MUST be passed to the alert generator for proper
+            # correlation in Session View and Analyzer graph.
             if use_world and world and host and user:
-                events = self.process_generator.generate_from_world(
+                events, entity_ids = self.process_generator.generate_from_world(
                     scenario, world, host, user, timestamp_offset
                 )
             else:
-                events = self.process_generator.generate(
+                # Generate entity_ids for legacy mode
+                entity_ids = [
+                    self.randomizer.generate_entity_id()
+                    for _ in range(len(scenario.processes))
+                ]
+                events, entity_ids = self.process_generator.generate(
                     scenario, entity_ids, hostname, agent_id, timestamp_offset, host, user
                 )
+
+            # Generate the detection rule alert using the SAME entity_ids from process events
+            alert, _ = self.alert_generator.generate(
+                scenario, hostname, agent_id, timestamp_offset, campaign, host, user,
+                entity_ids=entity_ids  # Pass entity_ids for correlation
+            )
 
             # Generate endpoint alert
             endpoint_alert = self.alert_generator.generate_endpoint_alert(alert)

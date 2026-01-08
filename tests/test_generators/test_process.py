@@ -5,21 +5,27 @@ from datetime import datetime, timedelta, timezone
 from secgen.generators.process import ProcessEventGenerator
 
 
-def test_generate_returns_list_with_correct_number_of_events(sample_scenario):
-    """Test that generate() returns list with correct number of events."""
+def test_generate_returns_tuple_with_events_and_entity_ids(sample_scenario):
+    """Test that generate() returns tuple with events and entity_ids."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    result = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
+    # Should return tuple of (events, entity_ids)
+    assert isinstance(result, tuple)
+    assert len(result) == 2
+
+    events, returned_ids = result
     assert isinstance(events, list)
     assert len(events) == len(sample_scenario.processes)
+    assert returned_ids == entity_ids
 
 
 def test_process_hierarchy_matches_scenario_processes(sample_scenario):
     """Test that process hierarchy matches scenario processes."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2", "id3"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
     # Each event should correspond to a scenario process
     for i, event in enumerate(events):
@@ -35,7 +41,7 @@ def test_entity_ids_properly_linked(sample_scenario):
     """Test that entity IDs are properly linked (parent, session_leader, entry_leader)."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2", "id3"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
     # First event (root) should have no parent ancestry
     root_event = events[0]
@@ -91,7 +97,7 @@ def test_ancestry_array_built_correctly(sample_scenario):
     )
 
     entity_ids = ["id1", "id2", "id3"]
-    events = generator.generate(multi_process_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(multi_process_scenario, entity_ids, "test-host", "test-agent")
 
     # For third event (index 2), ancestry should have id2 and id1 in reverse order
     if len(events) >= 3:
@@ -106,7 +112,7 @@ def test_timestamps_are_sequential(sample_scenario):
     """Test that timestamps are sequential."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2", "id3"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
     timestamps = [event["@timestamp"] for event in events]
     # All timestamps should be the same (within same generation)
@@ -123,7 +129,7 @@ def test_process_events_contain_required_ecs_fields(sample_scenario):
     """Test that process events contain required ECS fields."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
     for event in events:
         # Required ECS fields
@@ -150,7 +156,7 @@ def test_process_event_user_info_matches_scenario(sample_scenario):
     """Test that process event user info matches scenario."""
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2"]
-    events = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, "test-host", "test-agent")
 
     for i, event in enumerate(events):
         scenario_process = sample_scenario.processes[i]
@@ -166,7 +172,7 @@ def test_process_event_hostname_matches_input(sample_scenario):
     generator = ProcessEventGenerator()
     entity_ids = ["id1", "id2"]
     hostname = "custom-host"
-    events = generator.generate(sample_scenario, entity_ids, hostname, "test-agent")
+    events, _ = generator.generate(sample_scenario, entity_ids, hostname, "test-agent")
 
     for event in events:
         assert event["host"]["hostname"] == hostname
@@ -179,7 +185,7 @@ def test_timestamp_offset_applied_to_process_events(sample_scenario):
     entity_ids = ["id1", "id2"]
     offset_minutes = 60
 
-    events = generator.generate(
+    events, _ = generator.generate(
         sample_scenario, entity_ids, "test-host", "test-agent", timestamp_offset=offset_minutes
     )
 

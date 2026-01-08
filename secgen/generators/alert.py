@@ -58,6 +58,7 @@ class AlertGenerator:
         campaign: Campaign | None = None,
         host: Optional["Host"] = None,
         user: Optional["User"] = None,
+        entity_ids: list[str] | None = None,
     ) -> tuple[dict[str, Any], list[str]]:
         """
         Generate a detection rule alert based on an attack scenario.
@@ -70,6 +71,9 @@ class AlertGenerator:
             campaign: Optional Campaign object for correlated attacks
             host: Optional Host entity for proper correlation
             user: Optional User entity for proper correlation
+            entity_ids: Optional list of entity IDs for process correlation.
+                        If provided, the alert will use these IDs to match
+                        process events. CRITICAL for Session View and Analyzer.
 
         Returns:
             Tuple of (alert dictionary, list of entity IDs)
@@ -86,9 +90,18 @@ class AlertGenerator:
             if hostname is None:
                 hostname = self.randomizer.generate_hostname()
 
-        # Generate entity IDs for the process hierarchy
+        # Use provided entity IDs or generate new ones
+        # IMPORTANT: For Session View and Analyzer to work, these entity_ids
+        # MUST match the process events. Pass entity_ids from process generation.
         num_processes = len(scenario.processes)
-        entity_ids = [self.randomizer.generate_entity_id() for _ in range(num_processes)]
+        if entity_ids is None:
+            entity_ids = [self.randomizer.generate_entity_id() for _ in range(num_processes)]
+        elif len(entity_ids) != num_processes:
+            # Ensure we have the right number of entity IDs
+            entity_ids = list(entity_ids)
+            while len(entity_ids) < num_processes:
+                entity_ids.insert(0, self.randomizer.generate_entity_id())
+            entity_ids = entity_ids[:num_processes]
 
         # The last process is the malware (leaf node)
         process_entity_id = entity_ids[-1]
@@ -727,8 +740,9 @@ class AlertGenerator:
             "file": alert["file"],
             "process": alert["process"],
             "host": alert["host"],
-            "user": {"id": "0", "name": "root"},
-            "group": {"id": "0", "name": "root"},
+            # Use user from process context if available, fallback to root
+            "user": alert["process"].get("user", {"id": "0", "name": "root"}),
+            "group": alert["process"].get("group", {"id": "0", "name": "root"}),
             "data_stream": {
                 "type": "logs",
                 "dataset": "endpoint.alerts",

@@ -89,12 +89,12 @@ def print_summary(results: dict, dry_run: bool, count: int, logger: logging.Logg
         severity_counts[severity] = severity_counts.get(severity, 0) + 1
 
     logger.info("Scenario Distribution:")
-    for scenario, count in sorted(scenario_counts.items()):
-        logger.info(f"  {scenario:30s}: {count:3d} alerts")
+    for scenario, scenario_count in sorted(scenario_counts.items()):
+        logger.info(f"  {scenario:30s}: {scenario_count:3d} alerts")
 
     logger.info("Severity Distribution:")
-    for severity, count in sorted(severity_counts.items()):
-        logger.info(f"  {severity:10s}: {count:3d} alerts")
+    for severity, severity_count in sorted(severity_counts.items()):
+        logger.info(f"  {severity:10s}: {severity_count:3d} alerts")
 
     if not dry_run:
         indexed_count = sum(1 for a in alerts if a.indexed)
