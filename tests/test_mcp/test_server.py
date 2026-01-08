@@ -161,3 +161,4 @@ class TestErrorHandling:
         assert data["success"] is False
         assert "error" in data
 
+

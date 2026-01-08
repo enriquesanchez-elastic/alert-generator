@@ -581,9 +581,11 @@ indexer.index_multi_type_events({
 
 ### Basic Generation
 
+> **Note**: Add `--index-all` (legacy) or `--index` (new commands) to send events to Elasticsearch.
+
 ```bash
-# Generate 20 alerts with default settings
-python -m secgen --count 20
+# Generate 20 alerts and index to Elasticsearch
+python -m secgen --count 20 --index-all
 
 # Dry run (no indexing)
 python -m secgen --count 20 --dry-run --output alerts.json
@@ -595,33 +597,33 @@ python -m secgen --count 20 --dry-run --output alerts.json
 # Create persistent World
 python -m secgen world create --hosts 50 --users 100 --save world.json
 
-# Generate with World correlation
-python -m secgen generate --count 30 --world-file world.json
+# Generate with World correlation and index
+python -m secgen generate --count 30 --world-file world.json --index
 
 # Ephemeral World (not saved)
-python -m secgen generate --count 30 --use-world
+python -m secgen generate --count 30 --use-world --index
 ```
 
 ### Campaign Mode
 
 ```bash
 # Fast campaign (1 hour attack)
-python -m secgen --count 50 --campaign --campaign-hosts 5 --attack-speed fast
+python -m secgen --count 50 --campaign --campaign-hosts 5 --attack-speed fast --index-all
 
 # Slow campaign (weeks-long APT)
-python -m secgen --count 100 --campaign --campaign-hosts 10 --attack-speed slow
+python -m secgen --count 100 --campaign --campaign-hosts 10 --attack-speed slow --index-all
 
 # With World and working hours
-python -m secgen generate --count 50 --campaign --use-world --working-hours
+python -m secgen generate --count 50 --campaign --use-world --working-hours --index
 ```
 
 ### Performance Testing
 
 ```bash
-# Test generator performance
+# Test generator performance (indexes by default)
 python -m secgen perf-test --events 10000 --types file network dns
 
-# Test specific generators
+# Test specific generators without indexing
 python -m secgen perf-test --events 5000 --types auth --dry-run
 ```
 

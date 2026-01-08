@@ -5,6 +5,8 @@ from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, Optional
 
 from secgen.config.settings import Settings
+from secgen.data.detection_rules import build_kibana_rule_fields, get_rule_for_attack_pattern
+from secgen.data.mitre_attack import build_threat_mapping
 from secgen.generators.randomizers import RandomDataGenerator
 from secgen.models.campaign import Campaign
 from secgen.models.scenario import Scenario
@@ -22,6 +24,7 @@ if TYPE_CHECKING:
         "kibana.alert.rule.name",
         "kibana.alert.severity",
         "kibana.alert.risk_score",
+        "kibana.alert.rule.threat",
         "process.name",
         "host.name",
     ],
@@ -108,7 +111,7 @@ class AlertGenerator:
             **self._build_agent_info(agent_id, host),
             **self._build_host_info(hostname, host),
             **self._build_data_stream(),
-            "ecs": {"version": "1.4.0"},
+            "ecs": {"version": "8.11.0"},
             **self._build_file_info(scenario, malware_process, file_md5, file_sha1, file_sha256),
             **self._build_process_info(
                 scenario,
@@ -143,6 +146,189 @@ class AlertGenerator:
             }
 
         return alert, entity_ids
+
+    def generate_from_source_events(
+        self,
+        source_events: list[dict[str, Any]],
+        attack_pattern: str,
+        host: Optional["Host"] = None,
+        user: Optional["User"] = None,
+        timestamp_offset: int = 0,
+    ) -> dict[str, Any]:
+        """
+        Generate a detection rule alert linked to source Beat events.
+
+        This creates an alert that references the source events via
+        kibana.alert.original_event and kibana.alert.ancestors fields.
+
+        Args:
+            source_events: List of source event dictionaries (from Beats)
+            attack_pattern: Attack pattern name for rule lookup
+            host: Optional Host entity for correlation
+            user: Optional User entity for correlation
+            timestamp_offset: Minutes to offset timestamp
+
+        Returns:
+            Alert dictionary with proper event linkage
+        """
+        if not source_events:
+            raise ValueError("At least one source event is required")
+
+        now = datetime.now(timezone.utc) - timedelta(minutes=timestamp_offset)
+        timestamp = now.isoformat()
+
+        # Get the triggering event (first one)
+        trigger_event = source_events[0]
+
+        # Get rule for this attack pattern
+        rule = get_rule_for_attack_pattern(attack_pattern)
+        if not rule:
+            # Fall back to default rule fields
+            rule = {
+                "name": f"Alert for {attack_pattern}",
+                "risk_score": 50,
+                "severity": "medium",
+                "ttps": [],
+            }
+
+        # Build MITRE threat mapping
+        threat_mapping = build_threat_mapping(rule.get("ttps", []))
+
+        # Generate alert UUID
+        alert_uuid = self.randomizer.generate_uuid()
+
+        # Build ancestors from source events
+        ancestors = []
+        for i, event in enumerate(source_events[:5]):  # Limit to 5 ancestors
+            event_id = event.get("event", {}).get("id", self.randomizer.generate_uuid())
+            # Determine index from the event's beat type
+            agent_type = event.get("agent", {}).get("type", "unknown")
+            index = f"{agent_type}-*"
+            ancestors.append({
+                "depth": i,
+                "id": event_id,
+                "index": index,
+                "type": "event",
+            })
+
+        # Extract original event info from trigger event
+        original_event = trigger_event.get("event", {})
+
+        # Build the alert
+        alert: dict[str, Any] = {
+            "@timestamp": timestamp,
+            "ecs": {"version": "8.11.0"},
+            "event": {
+                "kind": "signal",
+                "category": original_event.get("category", ["malware"]),
+                "type": ["info"],
+                "action": original_event.get("action", "alert"),
+                "id": alert_uuid,
+                "created": timestamp,
+                "dataset": "security_solution",
+                "module": "security",
+            },
+            "kibana.alert.uuid": alert_uuid,
+            "kibana.alert.status": "active",
+            "kibana.alert.workflow_status": "open",
+            "kibana.alert.severity": rule.get("severity", "medium"),
+            "kibana.alert.risk_score": rule.get("risk_score", 50),
+            "kibana.alert.depth": len(ancestors),
+            "kibana.alert.ancestors": ancestors,
+            "kibana.alert.original_time": trigger_event.get("@timestamp", timestamp),
+            "kibana.alert.original_event.id": original_event.get("id", ""),
+            "kibana.alert.original_event.kind": original_event.get("kind", "event"),
+            "kibana.alert.original_event.category": original_event.get("category", []),
+            "kibana.alert.original_event.type": original_event.get("type", []),
+            "kibana.alert.original_event.action": original_event.get("action", ""),
+            "kibana.alert.original_event.module": original_event.get("module", ""),
+            "kibana.alert.original_event.dataset": original_event.get("dataset", ""),
+            "kibana.alert.original_event.outcome": original_event.get("outcome", ""),
+            "kibana.alert.reason": self._build_alert_reason(rule, trigger_event),
+            "kibana.space_ids": ["default"],
+            "kibana.version": "8.17.0",
+        }
+
+        # Add rule fields with MITRE threat mapping
+        rule_fields = build_kibana_rule_fields(
+            attack_pattern,
+            rule_uuid=self.randomizer.generate_uuid(),
+        )
+        # Override threat with our built mapping
+        rule_fields["kibana.alert.rule.threat"] = threat_mapping
+        alert.update(rule_fields)
+
+        # Copy relevant fields from trigger event
+        for field in ["host", "user", "source", "destination", "process", "file", "network", "dns", "http", "tls"]:
+            if field in trigger_event:
+                alert[field] = trigger_event[field]
+
+        # Add agent info
+        if "agent" in trigger_event:
+            alert["agent"] = trigger_event["agent"]
+        elif host:
+            alert["agent"] = host.to_agent_dict()
+
+        # Build related fields
+        related: dict[str, list[str]] = {}
+        for event in source_events:
+            # Collect IPs
+            for ip_field in ["source.ip", "destination.ip"]:
+                parts = ip_field.split(".")
+                value = event
+                for part in parts:
+                    value = value.get(part, {}) if isinstance(value, dict) else None
+                    if value is None:
+                        break
+                if value and isinstance(value, str):
+                    related.setdefault("ip", [])
+                    if value not in related["ip"]:
+                        related["ip"].append(value)
+
+            # Collect users
+            user_name = event.get("user", {}).get("name")
+            if user_name:
+                related.setdefault("user", [])
+                if user_name not in related["user"]:
+                    related["user"].append(user_name)
+
+            # Collect hosts
+            host_name = event.get("host", {}).get("name")
+            if host_name:
+                related.setdefault("hosts", [])
+                if host_name not in related["hosts"]:
+                    related["hosts"].append(host_name)
+
+        if related:
+            alert["related"] = related
+
+        return alert
+
+    def _build_alert_reason(
+        self,
+        rule: dict[str, Any],
+        trigger_event: dict[str, Any],
+    ) -> str:
+        """Build the alert reason string."""
+        rule_name = rule.get("name", "Unknown Rule")
+        host_name = trigger_event.get("host", {}).get("name", "unknown host")
+        severity = rule.get("severity", "medium")
+
+        # Try to get meaningful context
+        process_name = trigger_event.get("process", {}).get("name", "")
+        user_name = trigger_event.get("user", {}).get("name", "")
+        source_ip = trigger_event.get("source", {}).get("ip", "")
+
+        parts = [f"{rule_name} detected on {host_name}"]
+        if process_name:
+            parts.append(f"process: {process_name}")
+        if user_name:
+            parts.append(f"user: {user_name}")
+        if source_ip:
+            parts.append(f"source: {source_ip}")
+        parts.append(f"severity: {severity}")
+
+        return ", ".join(parts)
 
     def _generate_hashes(self, campaign: Campaign | None) -> tuple[str, str, str]:
         """Generate file hashes, using campaign base if available."""
@@ -342,11 +528,14 @@ class AlertGenerator:
         entity_ids: list[str],
     ) -> dict[str, Any]:
         """Build Kibana alert fields."""
+        # Generate source event ID for linkage
+        source_event_id = self.randomizer.generate_uuid()
+
         return {
             "kibana.alert.ancestors": [
                 {
                     "depth": 0,
-                    "id": self.randomizer.generate_uuid()[:20],
+                    "id": source_event_id,
                     "index": ".ds-logs-endpoint.alerts-default-2024.10.27-000001",
                     "type": "event",
                 }
@@ -357,7 +546,7 @@ class AlertGenerator:
             "kibana.alert.original_event.category": "malware",
             "kibana.alert.original_event.code": "malicious_file",
             "kibana.alert.original_event.dataset": "endpoint",
-            "kibana.alert.original_event.id": self.randomizer.generate_uuid(),
+            "kibana.alert.original_event.id": source_event_id,
             "kibana.alert.original_event.ingested": now,
             "kibana.alert.original_event.kind": "alert",
             "kibana.alert.original_event.module": "endpoint",
@@ -373,7 +562,7 @@ class AlertGenerator:
         }
 
     def _build_kibana_rule_fields(self, severity: str, risk_score: int) -> dict[str, Any]:
-        """Build Kibana rule fields."""
+        """Build Kibana rule fields with MITRE threat mapping."""
         rule_id = self.settings.elastic_security_rule_id
 
         severity_mapping = [
@@ -402,6 +591,9 @@ class AlertGenerator:
                 "value": "99",
             },
         ]
+
+        # Build MITRE threat mapping for malware
+        threat_mapping = build_threat_mapping(["T1204", "T1204.002"])
 
         return {
             "kibana.alert.rule.actions": [],
@@ -469,6 +661,7 @@ class AlertGenerator:
                 "severity": severity,
                 "severity_mapping": severity_mapping,
                 "tags": ["Elastic", "Endpoint Security"],
+                "threat": threat_mapping,
                 "timestamp_override": "event.ingested",
                 "type": "query",
                 "version": 100,
@@ -485,7 +678,7 @@ class AlertGenerator:
             "kibana.alert.rule.severity": severity,
             "kibana.alert.rule.severity_mapping": severity_mapping,
             "kibana.alert.rule.tags": ["Elastic", "Endpoint Security"],
-            "kibana.alert.rule.threat": [],
+            "kibana.alert.rule.threat": threat_mapping,
             "kibana.alert.rule.timestamp_override": "event.ingested",
             "kibana.alert.rule.to": "now",
             "kibana.alert.rule.type": "query",

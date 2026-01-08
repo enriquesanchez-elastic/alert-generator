@@ -65,18 +65,20 @@ secgen describe attack brute-force
 
 Generate events of a specific type.
 
+> **Note**: Add `--index` to send events to Elasticsearch. Without it, events are generated and displayed but not indexed.
+
 ```bash
-# Basic generation
+# Basic generation (dry run - displays summary only)
 secgen generate dns --count 50
 
-# Generate with parameters
-secgen generate dns --count 50 --param is_malicious=true
+# Generate with parameters and index to Elasticsearch
+secgen generate dns --count 50 --param is_malicious=true --index
 
 # Use World state for entity correlation
-secgen generate dns --count 50 --use-world
+secgen generate dns --count 50 --use-world --index
 
 # Use existing World state file
-secgen generate dns --count 50 --world-file qa-world.json
+secgen generate dns --count 50 --world-file qa-world.json --index
 
 # Index to Elasticsearch
 secgen generate dns --count 50 --index
@@ -291,17 +293,19 @@ secgen world info --load world.json
 
 ### Legacy Alert Generation
 
+> **Note**: Add `--index-all` to send events to Elasticsearch.
+
 ```bash
 # Basic generation
-python -m secgen --count 20
+python -m secgen --count 20 --index-all
 
 # With World state
-python -m secgen --count 20 --use-world
+python -m secgen --count 20 --use-world --index-all
 
 # Campaign mode
-python -m secgen generate --count 30 --campaign
+python -m secgen generate --count 30 --campaign --index
 
-# Performance test
+# Performance test (indexes by default, use --dry-run to skip)
 python -m secgen perf-test --events 10000
 
 # Sample scenario
@@ -319,6 +323,7 @@ python -m secgen sample-scenario --output scenario.yaml
 | `ELASTIC_PASSWORD` | Elasticsearch password | - |
 | `KIBANA_URL` | Kibana URL for links | `http://localhost:5601` |
 | `LOG_LEVEL` | Logging level | `INFO` |
+
 
 
 

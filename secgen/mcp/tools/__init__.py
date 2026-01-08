@@ -6,4 +6,5 @@ __all__ = [
     "world",
     "testing",
     "utility",
+    "correlated",
 ]

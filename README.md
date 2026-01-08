@@ -5,12 +5,19 @@ A comprehensive, modular tool for generating realistic, ECS-compliant security d
 ## Features
 
 - **Multi-Event-Type Generation**: Process, file, registry, network, DNS, authentication, cloud, and threat intelligence events
+- **Beat Event Generators**: Auditbeat, Packetbeat, and Filebeat format events for realistic agent simulation
 - **World State Management**: Persistent entity correlation across all event types (host.id, user.name, process.entity_id)
 - **Attack Campaigns**: Correlated multi-phase attacks with shared threat actor infrastructure
+- **MITRE ATT&CK Integration**: Full threat mapping with tactics, techniques, and subtechniques
+- **Attack Discovery**: Generate attack discovery documents with correlated findings
+- **Security Cases**: Full Elastic Cases API-compatible case management documents
+- **Detection Rules**: Pre-built rule templates with MITRE mappings
 - **Cloud Security**: AWS CloudTrail, Azure AD, and GCP audit log generation
 - **Network Security**: DNS, HTTP, TLS with JA3 fingerprints, and geo-enriched network flows
 - **Threat Intelligence**: Coordinated IOC generation for indicator matching rules
 - **ECS Compliance**: Full Elastic Common Schema compliance for all event types
+
+> 📖 **NEW!** For documentation on Beat generators, Attack Discovery, Cases, and MITRE integration, see [docs/FEATURES.md](docs/FEATURES.md)
 
 ## Installation
 
@@ -80,15 +87,17 @@ python -m secgen describe attack brute-force
 
 ### Generate Events by Type
 
+> **Note**: Add `--index` to send events to Elasticsearch. Without it, events are generated and displayed but not indexed.
+
 ```bash
-# Generate DNS events
+# Generate DNS events (dry run - displays summary only)
 python -m secgen generate dns --count 50
 
 # Generate with malicious parameter and index to Elasticsearch
 python -m secgen generate dns --count 50 --param is_malicious=true --index
 
 # Generate vulnerability scan findings
-python -m secgen generate vulnerability --count 100 --param severity=critical
+python -m secgen generate vulnerability --count 100 --param severity=critical --index
 
 # Generate risk scores for Entity Analytics
 python -m secgen generate risk-score --use-world --count 30 --index
@@ -105,6 +114,37 @@ python -m secgen attack c2-beacon --world-file qa-world.json --index
 
 # Execute DGA activity
 python -m secgen attack dga-activity --index
+```
+
+### Beat Event Generation 
+
+```bash
+# Generate Auditbeat events
+python -m secgen generate auditbeat --count 50 --param dataset=auditd --index
+python -m secgen generate auditbeat --count 20 --param dataset=system.login --param is_malicious=true --index
+
+# Generate Packetbeat events
+python -m secgen generate packetbeat --count 100 --param dataset=dns --index
+python -m secgen generate packetbeat --count 50 --param dataset=http --param is_malicious=true --index
+
+# Generate Filebeat events
+python -m secgen generate filebeat --count 200 --param dataset=system.syslog --index
+python -m secgen generate filebeat --count 50 --param dataset=system.auth --param is_malicious=true --index
+```
+
+### Attack Discovery & Cases (NEW!)
+
+```bash
+# Generate Attack Discovery
+python -m secgen generate attack-discovery --pattern brute-force --alerts 10 --index
+
+# Generate Security Cases
+python -m secgen generate case --template brute-force-investigation --index
+
+# Generate full correlated attack chain (events → alerts → discovery → case)
+python -m secgen correlated-attack brute-force --events 100 --index
+python -m secgen correlated-attack c2-beacon --events 50 --index
+python -m secgen correlated-attack ransomware --events 200 --no-case --index
 ```
 
 ### Feature Testing
@@ -135,23 +175,25 @@ python -m secgen preset attack-simulation
 
 ### Legacy Mode (Backward Compatible)
 
+> **Note**: Add `--index-all` (legacy) or `--index` to send events to Elasticsearch.
+
 ```bash
-# Legacy mode - generate 20 alerts
-python -m secgen --count 20
+# Legacy mode - generate 20 alerts and index
+python -m secgen --count 20 --index-all
 
 # Generate with entity correlation (World state)
-python -m secgen --count 20 --use-world
+python -m secgen --count 20 --use-world --index-all
 
 # Create and manage World state
 python -m secgen world create --hosts 50 --users 100 --save world.json
 
 # Generate with persistent World state
-python -m secgen generate --count 30 --world-file world.json --campaign
+python -m secgen generate --count 30 --world-file world.json --campaign --index
 
 # Generate sample multi-event scenario
 python -m secgen sample-scenario --output my_scenario.yaml
 
-# Performance testing
+# Performance testing (indexes by default, use --dry-run to skip)
 python -m secgen perf-test --events 10000 --types file network dns
 ```
 
@@ -326,15 +368,17 @@ python -m secgen mcp --log-level DEBUG
 
 ### Legacy Mode (Backward Compatible)
 
+> **Note**: Add `--index-all` to send events to Elasticsearch.
+
 ```bash
 # Basic alert generation
-python -m secgen --count 20
+python -m secgen --count 20 --index-all
 
 # Campaign mode with entity correlation
-python -m secgen --count 50 --campaign --campaign-hosts 10 --use-world
+python -m secgen --count 50 --campaign --campaign-hosts 10 --use-world --index-all
 
 # Time distribution with business hours
-python -m secgen --count 100 --time-spread days --working-hours
+python -m secgen --count 100 --time-spread days --working-hours --index-all
 
 # Delete all generated data
 python -m secgen --delete-all
@@ -366,15 +410,17 @@ python -m secgen world load --load world.json
 
 Advanced generation with World state correlation.
 
+> **Note**: Add `--index` to send events to Elasticsearch. Without it, events are generated and displayed but not indexed.
+
 ```bash
 # Generate with ephemeral World state
-python -m secgen generate --count 30 --use-world
+python -m secgen generate --count 30 --use-world --index
 
 # Generate with persistent World state
-python -m secgen generate --count 50 --world-file world.json --campaign
+python -m secgen generate --count 50 --world-file world.json --campaign --index
 
 # Save World state after generation
-python -m secgen generate --count 30 --use-world --save-world world_after.json
+python -m secgen generate --count 30 --use-world --save-world world_after.json --index
 
 # Full options
 python -m secgen generate \
@@ -386,6 +432,7 @@ python -m secgen generate \
   --speed slow \
   --time-spread days \
   --working-hours \
+  --index \
   --output events.json
 ```
 
@@ -730,7 +777,7 @@ indicators = threat_gen.generate_coordinated_iocs(
 # Create persistent World state
 python -m secgen world create --hosts 50 --users 100 --save campaign_world.json
 
-# Generate correlated campaign
+# Generate correlated campaign and index to Elasticsearch
 python -m secgen generate \
   --count 100 \
   --world-file campaign_world.json \
@@ -738,7 +785,8 @@ python -m secgen generate \
   --hosts 10 \
   --speed slow \
   --time-spread days \
-  --working-hours
+  --working-hours \
+  --index
 
 # View generated data in Kibana Security
 ```
@@ -760,7 +808,7 @@ python -m secgen perf-test --events 100 --types aws azure gcp
 
 ```bash
 # Network flows with geo-enrichment
-python -m secgen generate --count 500 --use-world
+python -m secgen generate --count 500 --use-world --index
 ```
 
 ## Architecture
@@ -835,6 +883,11 @@ secgen/
 | `logs-azure.auditlogs-*` | Azure audit logs |
 | `logs-gcp.audit-*` | GCP audit logs |
 | `logs-ti_util.logs-*` | Threat indicators |
+| `auditbeat-*` | Auditbeat events (auditd, login, process, FIM) |
+| `packetbeat-*` | Packetbeat events (DNS, HTTP, TLS, flow) |
+| `filebeat-*` | Filebeat events (syslog, auth, nginx, apache) |
+| `.ai-attack-discovery-default` | Attack Discovery documents |
+| `logs-case-default` | Security Case documents |
 
 ## Data Management
 

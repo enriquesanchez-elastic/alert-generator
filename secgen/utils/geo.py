@@ -293,3 +293,4 @@ def get_as_info(geo_data: dict[str, Any]) -> dict[str, Any]:
         },
     }
 
+

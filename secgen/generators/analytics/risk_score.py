@@ -293,3 +293,4 @@ class RiskScoreGenerator:
             entity_type=entity_type,
         )
 
+

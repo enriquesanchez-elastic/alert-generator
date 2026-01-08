@@ -33,6 +33,15 @@ def bootstrap_registry() -> None:
 
     # Analytics generators
     from secgen.generators.analytics import RiskScoreGenerator  # noqa: F401
+    from secgen.generators.attack_discovery import AttackDiscoveryGenerator  # noqa: F401
+    from secgen.generators.case import CaseGenerator  # noqa: F401
+
+    # Beat generators
+    from secgen.generators.beats import (  # noqa: F401
+        AuditbeatEventGenerator,
+        FilebeatEventGenerator,
+        PacketbeatEventGenerator,
+    )
 
     # Cloud generators
     from secgen.generators.cloud import (  # noqa: F401
@@ -94,6 +103,11 @@ def bootstrap_registry() -> None:
     finalize_attack_patterns(VulnerabilityGenerator)
     finalize_attack_patterns(CSPMGenerator)
     finalize_attack_patterns(RiskScoreGenerator)
+    finalize_attack_patterns(AttackDiscoveryGenerator)
+    finalize_attack_patterns(CaseGenerator)
+    finalize_attack_patterns(AuditbeatEventGenerator)
+    finalize_attack_patterns(PacketbeatEventGenerator)
+    finalize_attack_patterns(FilebeatEventGenerator)
 
     _bootstrapped = True
     logger.debug("Generator registry bootstrap complete")

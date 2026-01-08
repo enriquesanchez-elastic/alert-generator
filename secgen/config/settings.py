@@ -42,6 +42,23 @@ class Settings(BaseSettings):
         description="Kibana alerts index",
     )
 
+    # Kibana configuration
+    kibana_url: str = Field(
+        default="",
+        env="KIBANA_URL",
+        description="Kibana URL (e.g., http://localhost:5601). If not set, derives from elastic_url",
+    )
+    kibana_base_path: str = Field(
+        default="",
+        env="KIBANA_BASE_PATH",
+        description="Kibana base path (e.g., /dvx). Found in your Kibana URL after the port.",
+    )
+    kibana_space: str = Field(
+        default="default",
+        env="KIBANA_SPACE",
+        description="Kibana space ID (use 'default' for default space)",
+    )
+
     # Rule configuration
     elastic_security_rule_id: str = Field(
         default="9a1a2dae-0b5f-4c3d-8305-a268d404c306",

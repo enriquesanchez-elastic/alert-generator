@@ -275,3 +275,127 @@ INDEX_EVENTS_SCHEMA: dict[str, Any] = {
     },
     "required": ["enable_indexing", "confirm"],
 }
+
+# ============================================================================
+# CORRELATED ATTACK TOOLS
+# ============================================================================
+
+GENERATE_CORRELATED_ATTACK_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "attack_type": {
+            "type": "string",
+            "enum": [
+                "brute-force",
+                "c2-beacon",
+                "dga",
+                "lateral-movement",
+                "data-exfiltration",
+                "malware-drop",
+                "ransomware",
+                "webshell",
+            ],
+            "description": "Type of attack to simulate",
+        },
+        "source_event_count": {
+            "type": "integer",
+            "minimum": 5,
+            "maximum": 100,
+            "default": 20,
+            "description": "Number of source Beat events to generate",
+        },
+        "generate_discovery": {
+            "type": "boolean",
+            "default": True,
+            "description": "Generate Attack Discovery document",
+        },
+        "generate_case": {
+            "type": "boolean",
+            "default": True,
+            "description": "Generate Security Case",
+        },
+    },
+    "required": ["attack_type"],
+}
+
+GENERATE_ATTACK_DISCOVERY_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "attack_pattern": {
+            "type": "string",
+            "description": "Attack pattern name (e.g., 'brute-force', 'c2-beacon')",
+        },
+        "alert_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of alert UUIDs to link to this discovery",
+        },
+    },
+    "required": ["attack_pattern"],
+}
+
+GENERATE_CASE_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "template": {
+            "type": "string",
+            "enum": [
+                "brute-force-investigation",
+                "malware-incident",
+                "data-exfiltration-investigation",
+                "lateral-movement-investigation",
+                "ransomware-incident",
+                "c2-investigation",
+            ],
+            "description": "Case template to use",
+        },
+        "title": {
+            "type": "string",
+            "description": "Custom case title (optional, overrides template)",
+        },
+        "severity": {
+            "type": "string",
+            "enum": ["low", "medium", "high", "critical"],
+            "default": "medium",
+            "description": "Case severity",
+        },
+        "alert_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of alert UUIDs to attach",
+        },
+        "attack_discovery_ids": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of attack discovery IDs to link",
+        },
+    },
+}
+
+GENERATE_BEAT_EVENTS_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "properties": {
+        "beat_type": {
+            "type": "string",
+            "enum": ["auditbeat", "packetbeat", "filebeat"],
+            "description": "Type of Beat events to generate",
+        },
+        "count": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000,
+            "default": 20,
+            "description": "Number of events to generate",
+        },
+        "is_malicious": {
+            "type": "boolean",
+            "default": False,
+            "description": "Generate malicious/suspicious events",
+        },
+        "dataset": {
+            "type": "string",
+            "description": "Specific dataset (e.g., 'auditd', 'dns', 'system.auth')",
+        },
+    },
+    "required": ["beat_type"],
+}

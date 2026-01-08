@@ -1,6 +1,13 @@
 """Data models for alerts generator."""
 
+from secgen.models.attack_discovery import AttackDiscovery
 from secgen.models.campaign import Campaign
+from secgen.models.case import (
+    CaseAlertAttachment,
+    CaseComment,
+    CaseConnector,
+    SecurityCase,
+)
 
 # Import entities from submodule
 from secgen.models.entities import Host, OSInfo, ProcessNode, ProcessTree, User
@@ -33,4 +40,11 @@ __all__ = [
     "User",
     "ProcessNode",
     "ProcessTree",
+    # Attack Discovery
+    "AttackDiscovery",
+    # Case Management
+    "SecurityCase",
+    "CaseComment",
+    "CaseConnector",
+    "CaseAlertAttachment",
 ]

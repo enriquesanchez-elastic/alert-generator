@@ -4,3 +4,4 @@ from secgen.generators.security.vulnerability import VulnerabilityGenerator
 
 __all__ = ["VulnerabilityGenerator"]
 
+

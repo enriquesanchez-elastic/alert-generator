@@ -354,3 +354,4 @@ class OutputFormatter:
         """Build a Kibana Analyzer link for a process."""
         return f"{base_url}/app/security/hosts/events?query=process.entity_id:{process_entity_id}"
 
+

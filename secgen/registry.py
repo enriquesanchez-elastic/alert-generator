@@ -300,3 +300,4 @@ def finalize_attack_patterns(cls: type) -> None:
             metadata.generator_class = cls
             _registry.register_attack_pattern(metadata)
 
+

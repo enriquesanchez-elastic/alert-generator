@@ -257,6 +257,217 @@ def cmd_generate(args: argparse.Namespace, logger: logging.Logger, settings: Any
     print_summary(results, args.dry_run, args.count, logger)
 
 
+def cmd_correlated_attack(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> None:
+    """Generate a fully correlated attack chain."""
+    import json
+
+    from secgen.core.world import World
+    from secgen.generators.correlated_attack import CorrelatedAttackOrchestrator
+    from secgen.indexers.elasticsearch import ElasticsearchIndexer
+
+    logger.info("=" * 70)
+    logger.info("CORRELATED ATTACK GENERATOR")
+    logger.info("=" * 70)
+    logger.info(f"Attack type: {args.attack_type}")
+    logger.info(f"Source events: {args.event_count}")
+    logger.info(f"Generate discovery: {not args.no_discovery}")
+    logger.info(f"Generate case: {not args.no_case}")
+
+    # Load or create world
+    world = None
+    if args.world_file:
+        logger.info(f"Loading World from: {args.world_file}")
+        world = World.load(args.world_file)
+    else:
+        world = World()
+        world.populate(num_hosts=10, num_users=20)
+
+    # Create orchestrator
+    orchestrator = CorrelatedAttackOrchestrator(settings, world)
+
+    # Generate attack chain
+    result = orchestrator.generate_correlated_attack(
+        attack_type=args.attack_type,
+        source_event_count=args.event_count,
+        generate_discovery=not args.no_discovery,
+        generate_case=not args.no_case,
+    )
+
+    logger.info("-" * 70)
+    logger.info("RESULTS:")
+    logger.info(f"  Source events: {len(result.source_events)}")
+    logger.info(f"  Alerts: {len(result.alerts)}")
+    if result.attack_discovery:
+        logger.info(f"  Attack Discovery: {result.discovery_id[:8]}...")
+    if result.case:
+        logger.info(f"  Case: {result.case_id[:8]}...")
+    logger.info(f"  Affected hosts: {result.hosts}")
+    logger.info(f"  Affected users: {result.users}")
+
+    # Index if requested
+    if args.index:
+        indexer = ElasticsearchIndexer(settings)
+        logger.info("Indexing to Elasticsearch...")
+
+        # Index source events by beat type
+        if result.source_events:
+            beat_type = result.source_events[0].get("agent", {}).get("type", "auditbeat")
+            indexer.index_beat_events(result.source_events, beat_type)
+            logger.info(f"  Indexed {len(result.source_events)} {beat_type} events")
+
+        # Index alerts
+        for alert in result.alerts:
+            indexer.index_alert(alert)
+        logger.info(f"  Indexed {len(result.alerts)} alerts")
+
+        # Index attack discovery
+        if result.attack_discovery:
+            indexer.index_attack_discovery(result.attack_discovery.to_dict())
+            logger.info("  Indexed attack discovery")
+
+        # Create case (via Kibana API)
+        if result.case:
+            case_result = indexer.create_case(result.case.to_create_payload())
+            if case_result:
+                case_id = case_result.get('id')
+                logger.info(f"  Created case: {case_id}")
+
+                # Attach alerts to case if case was created via API
+                if case_id and result.alert_ids:
+                    logger.info(f"  Attaching {len(result.alert_ids)} alerts to case...")
+                    attach_result = indexer.attach_alerts_to_case(
+                        case_id=case_id,
+                        alert_ids=result.alert_ids,
+                        owner="securitySolution"
+                    )
+                    if attach_result:
+                        logger.info("  ✓ Successfully attached alerts to case")
+                    else:
+                        logger.warning("  ⚠ Failed to attach alerts to case (non-fatal)")
+
+    # Save to file if requested
+    if args.output:
+        output_data = {
+            "attack_type": result.attack_type,
+            "source_events": result.source_events,
+            "alerts": result.alerts,
+            "attack_discovery": result.attack_discovery.to_dict() if result.attack_discovery else None,
+            "case": result.case.to_dict() if result.case else None,
+            "correlation": {
+                "source_event_ids": result.source_event_ids,
+                "alert_ids": result.alert_ids,
+                "discovery_id": result.discovery_id,
+                "case_id": result.case_id,
+            },
+        }
+        with open(args.output, "w") as f:
+            json.dump(output_data, f, indent=2, default=str)
+        logger.info(f"Saved to: {args.output}")
+
+    logger.info("=" * 70)
+
+
+def cmd_campaign_chain(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> None:
+    """Generate a multi-phase attack campaign with full correlation."""
+    import json
+
+    from secgen.core.world import World
+    from secgen.generators.correlated_attack import CorrelatedAttackOrchestrator
+    from secgen.indexers.elasticsearch import ElasticsearchIndexer
+
+    logger.info("=" * 70)
+    logger.info("CAMPAIGN CHAIN GENERATOR")
+    logger.info("=" * 70)
+    logger.info(f"Phases: {args.phases}")
+    logger.info(f"Events per phase: {args.events_per_phase}")
+    logger.info(f"Shared host: {args.shared_host}")
+
+    # Load or create world
+    world = None
+    if args.world_file:
+        logger.info(f"Loading World from: {args.world_file}")
+        world = World.load(args.world_file)
+    else:
+        world = World()
+        world.populate(num_hosts=10, num_users=20)
+
+    # Create orchestrator
+    orchestrator = CorrelatedAttackOrchestrator(settings, world)
+
+    # Generate multi-phase campaign
+    results = orchestrator.generate_multi_attack_campaign(
+        attack_types=args.phases,
+        events_per_attack=args.events_per_phase,
+        shared_host=args.shared_host,
+    )
+
+    logger.info("-" * 70)
+    logger.info("CAMPAIGN RESULTS:")
+    total_events = 0
+    total_alerts = 0
+    for i, result in enumerate(results):
+        logger.info(f"  Phase {i + 1} ({result.attack_type}):")
+        logger.info(f"    Events: {len(result.source_events)}")
+        logger.info(f"    Alerts: {len(result.alerts)}")
+        total_events += len(result.source_events)
+        total_alerts += len(result.alerts)
+
+    logger.info(f"  TOTAL: {total_events} events, {total_alerts} alerts")
+    logger.info(f"  Discoveries: {len([r for r in results if r.attack_discovery])}")
+    logger.info(f"  Cases: {len([r for r in results if r.case])}")
+
+    # Index if requested
+    if args.index:
+        indexer = ElasticsearchIndexer(settings)
+        logger.info("Indexing to Elasticsearch...")
+
+        for result in results:
+            # Index source events
+            if result.source_events:
+                beat_type = result.source_events[0].get("agent", {}).get("type", "auditbeat")
+                indexer.index_beat_events(result.source_events, beat_type)
+
+            # Index alerts
+            for alert in result.alerts:
+                indexer.index_alert(alert)
+
+            # Index attack discovery
+            if result.attack_discovery:
+                indexer.index_attack_discovery(result.attack_discovery.to_dict())
+
+            # Create case
+            if result.case:
+                indexer.create_case(result.case.to_create_payload())
+
+        logger.info("  Indexing complete")
+
+    # Save to file if requested
+    if args.output:
+        output_data = {
+            "phases": [
+                {
+                    "attack_type": r.attack_type,
+                    "source_events": r.source_events,
+                    "alerts": r.alerts,
+                    "attack_discovery": r.attack_discovery.to_dict() if r.attack_discovery else None,
+                    "case": r.case.to_dict() if r.case else None,
+                }
+                for r in results
+            ],
+            "summary": {
+                "total_events": total_events,
+                "total_alerts": total_alerts,
+                "discoveries": len([r for r in results if r.attack_discovery]),
+                "cases": len([r for r in results if r.case]),
+            },
+        }
+        with open(args.output, "w") as f:
+            json.dump(output_data, f, indent=2, default=str)
+        logger.info(f"Saved to: {args.output}")
+
+    logger.info("=" * 70)
+
+
 def cmd_perf_test(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> None:
     """Run performance test for event generation."""
     from secgen.generators.endpoint import (
@@ -795,6 +1006,69 @@ Examples:
         help="Logging level for MCP server",
     )
 
+    # Correlated attack subcommand
+    correlated_parser = subparsers.add_parser(
+        "correlated-attack",
+        help="Generate fully correlated attack chains (events -> alerts -> discovery -> case)",
+    )
+    correlated_parser.add_argument(
+        "attack_type",
+        choices=[
+            "brute-force",
+            "c2-beacon",
+            "dga",
+            "lateral-movement",
+            "data-exfiltration",
+            "malware-drop",
+            "ransomware",
+            "webshell",
+        ],
+        help="Type of attack to simulate",
+    )
+    correlated_parser.add_argument(
+        "--event-count", "--events", type=int, default=20, help="Number of source events"
+    )
+    correlated_parser.add_argument(
+        "--no-discovery", action="store_true", help="Skip Attack Discovery generation"
+    )
+    correlated_parser.add_argument(
+        "--no-case", action="store_true", help="Skip Case generation"
+    )
+    correlated_parser.add_argument("--world-file", type=str, help="Load World from file")
+    correlated_parser.add_argument("--index", action="store_true", help="Index to Elasticsearch")
+    correlated_parser.add_argument("--output", type=str, help="Save to JSON file")
+    correlated_parser.add_argument("--json", action="store_true", help="Output JSON format")
+
+    # Campaign chain subcommand
+    campaign_chain_parser = subparsers.add_parser(
+        "campaign-chain",
+        help="Generate multi-phase attack campaign with full correlation",
+    )
+    campaign_chain_parser.add_argument(
+        "--phases",
+        nargs="+",
+        default=["brute-force", "lateral-movement", "data-exfiltration"],
+        choices=[
+            "brute-force",
+            "c2-beacon",
+            "dga",
+            "lateral-movement",
+            "data-exfiltration",
+            "malware-drop",
+            "ransomware",
+        ],
+        help="Attack phases to include",
+    )
+    campaign_chain_parser.add_argument(
+        "--events-per-phase", type=int, default=20, help="Events per attack phase"
+    )
+    campaign_chain_parser.add_argument(
+        "--shared-host", action="store_true", default=True, help="Share host across phases"
+    )
+    campaign_chain_parser.add_argument("--world-file", type=str, help="Load World from file")
+    campaign_chain_parser.add_argument("--index", action="store_true", help="Index to Elasticsearch")
+    campaign_chain_parser.add_argument("--output", type=str, help="Save to JSON file")
+
     # Legacy arguments (for backward compatibility)
     parser.add_argument("--count", type=int, default=10, help="Number of alerts")
     parser.add_argument("--index-all", action="store_true", help="Index immediately")
@@ -886,6 +1160,14 @@ Examples:
 
     if args.command == "llm":
         cmd_llm(args, logger, settings)
+        return
+
+    if args.command == "correlated-attack":
+        cmd_correlated_attack(args, logger, settings)
+        return
+
+    if args.command == "campaign-chain":
+        cmd_campaign_chain(args, logger, settings)
         return
 
     # Legacy mode

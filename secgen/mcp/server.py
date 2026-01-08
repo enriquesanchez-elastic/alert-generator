@@ -185,6 +185,39 @@ class SecGenMCPServer:
                     ),
                     inputSchema=schemas.INDEX_EVENTS_SCHEMA,
                 ),
+                # Correlated Attack Tools (4)
+                types.Tool(
+                    name="generate_correlated_attack",
+                    description=(
+                        "Generate a fully correlated attack chain including source Beat events, "
+                        "detection alerts, Attack Discovery, and Security Case - all properly linked."
+                    ),
+                    inputSchema=schemas.GENERATE_CORRELATED_ATTACK_SCHEMA,
+                ),
+                types.Tool(
+                    name="generate_attack_discovery",
+                    description=(
+                        "Generate an Attack Discovery document that analyzes alerts and provides "
+                        "a narrative summary with MITRE ATT&CK mapping."
+                    ),
+                    inputSchema=schemas.GENERATE_ATTACK_DISCOVERY_SCHEMA,
+                ),
+                types.Tool(
+                    name="generate_case",
+                    description=(
+                        "Generate a Security Case for investigation with optional alert attachments "
+                        "and Attack Discovery linkage."
+                    ),
+                    inputSchema=schemas.GENERATE_CASE_SCHEMA,
+                ),
+                types.Tool(
+                    name="generate_beat_events",
+                    description=(
+                        "Generate Beat-format events (Auditbeat, Packetbeat, Filebeat) for testing "
+                        "with realistic source data."
+                    ),
+                    inputSchema=schemas.GENERATE_BEAT_EVENTS_SCHEMA,
+                ),
             ]
 
         # =================================================================
@@ -210,6 +243,13 @@ class SecGenMCPServer:
                     result = await self._handle_testing_tool(name, arguments)
                 elif name in ["validate_elasticsearch", "get_capabilities", "index_events"]:
                     result = await self._handle_utility_tools(name, arguments)
+                elif name in [
+                    "generate_correlated_attack",
+                    "generate_attack_discovery",
+                    "generate_case",
+                    "generate_beat_events",
+                ]:
+                    result = await self._handle_correlated_tools(name, arguments)
                 else:
                     result = format_error_response(
                         error=f"Unknown tool: {name}",
@@ -268,6 +308,21 @@ class SecGenMCPServer:
         from secgen.mcp.tools import utility
 
         return await utility.handle_tool(name, arguments, self.state, self.settings)
+
+    async def _handle_correlated_tools(self, name: str, arguments: dict[str, Any]) -> str:
+        """Handle correlated attack tools."""
+        from secgen.mcp.tools import correlated
+
+        if name == "generate_correlated_attack":
+            return await correlated.generate_correlated_attack(self.state, arguments)
+        elif name == "generate_attack_discovery":
+            return await correlated.generate_attack_discovery(self.state, arguments)
+        elif name == "generate_case":
+            return await correlated.generate_case(self.state, arguments)
+        elif name == "generate_beat_events":
+            return await correlated.generate_beat_events(self.state, arguments)
+        else:
+            return format_error_response(f"Unknown correlated tool: {name}")
 
     # =====================================================================
     # SERVER LIFECYCLE

@@ -291,3 +291,4 @@ class TestFormatIndexingResult:
         assert data["indexed"] is False
         assert data["error"] == "Authentication failed"
 
+
