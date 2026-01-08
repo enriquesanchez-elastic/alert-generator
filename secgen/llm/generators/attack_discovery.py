@@ -6,12 +6,12 @@ from typing import Any
 
 from secgen.llm.cache import ArtifactCache
 from secgen.llm.client import GeminiClient
-from secgen.llm.generators.base import BaseLLMGenerator
+from secgen.llm.generators.base import BaseArtifactGenerator
 
 logger = logging.getLogger(__name__)
 
 
-class AttackDiscoveryLLMGenerator(BaseLLMGenerator):
+class AttackDiscoveryLLMGenerator(BaseArtifactGenerator):
     """
     LLM-powered generator for Attack Discovery narratives.
 

@@ -576,7 +576,7 @@ def cmd_llm(args: argparse.Namespace, logger: logging.Logger, settings: Any) -> 
         )
     except ImportError as e:
         logger.error(f"LLM dependencies not installed: {e}")
-        logger.error("Install with: pip install google-generativeai")
+        logger.error("Install with: pip install google-genai")
         return
 
     # Initialize client and cache

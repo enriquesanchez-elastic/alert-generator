@@ -42,15 +42,20 @@ The AI-enhanced generation module uses Google's Gemini LLM to create:
 
 ## Prerequisites
 
-### 1. Install google-genai
+### 1. Install SecGen (includes google-genai)
 
-The Gemini client requires the `google-genai` package:
+The `google-genai` package is **included in SecGen's dependencies**. If you installed SecGen properly, you already have it:
 
 ```bash
-# Using uv
-uv pip install google-genai
+# Standard installation (includes google-genai)
+uv pip install -e .
+# or
+pip install -e .
+```
 
-# Using pip
+If you need to install `google-genai` separately (e.g., for testing):
+
+```bash
 pip install google-genai
 ```
 

@@ -360,10 +360,8 @@ SecGen includes optional AI-powered features that use Google Gemini to generate 
 ### Quick Setup
 
 ```bash
-# Install google-genai
-pip install google-genai
-
-# Set API key
+# google-genai is included in SecGen's dependencies
+# Just set your API key:
 export GEMINI_API_KEY="your-api-key-here"
 ```
 
